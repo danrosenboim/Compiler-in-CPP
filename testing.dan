@@ -1,0 +1,25 @@
+
+for (i = 0) until (aasdf)
+{
+
+}
+
+int hello1(text hello, int YAY)
+{
+	
+	return YAY;
+}
+
+
+int hello = 0;
+out hello;
+
+if (hello == 0) then
+{
+	out hello + 1;
+}
+else
+{
+	out "you failed!";	
+}
+

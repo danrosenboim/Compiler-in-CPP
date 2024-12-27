@@ -6,9 +6,9 @@ CXXFLAGS = -g -Wall -Wextra
 SRC_DIR = src
 BUILD_DIR = build
 
-# Files
+# Files - flattening directory structure
 SOURCES = $(shell find $(SRC_DIR) -type f -name "*.cpp")
-OBJECTS = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SOURCES:.cpp=))
+OBJECTS = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SOURCES))
 TARGET = compiler
 
 # Function names
@@ -18,7 +18,7 @@ all: directories $(TARGET)
 
 # Linking files
 $(TARGET): $(OBJECTS)
-	$(CXX) $(OBJECTS) -o $(TARGET)
+	$(CXX) $(CXXFLAGS) $^ -o $(TARGET)
 
 # Converting files to .o
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp

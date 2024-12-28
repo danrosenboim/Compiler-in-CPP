@@ -8,7 +8,7 @@ BUILD_DIR = build
 
 # Files - flattening directory structure
 SOURCES = $(shell find $(SRC_DIR) -type f -name "*.cpp")
-OBJECTS = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SOURCES))
+OBJECTS = $(SOURCES:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
 TARGET = compiler
 
 # Function names
@@ -26,7 +26,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 
 
 directories:
-	mkdir -p $(BUILD_DIR)
+	@mkdir -p $(dir $(OBJECTS))
 
 clean:
-	rm -rf $(BUILD_DIR)
+	@rm -rf $(BUILD_DIR)

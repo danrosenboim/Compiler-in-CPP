@@ -31,6 +31,6 @@ enum TokenType
 	
 
 	// Parser
-	Node
+	NODE
 };
 

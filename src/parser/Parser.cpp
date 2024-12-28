@@ -9,7 +9,18 @@ Parser::Parser(std::shared_ptr<Lexer> scanner) : scanner(scanner)
 
 std::shared_ptr<Node> Parser::parseProgram()
 {
-	auto programHead = std::make_shared<Node>(Token(TokenType::PROGRAM, 0));
+	// Setting up AST head
+	auto programHead = std::make_shared<Node>(NodeType::PROGRAM, Token(TokenType::NODE, 0));
+
+	// Continue parsing the program until its over
+	while(currentToken.getTag() != TokenType::END_OF_FILE)
+	{
+		// A program can only be a function or statement
+		if(currentToken.getTag() == TokenType::FUNCTION)
+		{
+			programNode->addChild(parseFunction())
+		}
+	}
 }
 
 void Lexer::advance()

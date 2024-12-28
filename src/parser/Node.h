@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include "NodeType.h"
 
 // This class will be used as a node for the AST
 class Node
@@ -15,7 +16,7 @@ public:
 	Inputs: the new node to add
 	Outputs: none
 	*/
-	void addChild(const Node& node);
+	void addChild(std::shared_ptr<Node> node);
 
 	/*
 	Function to return the token on request

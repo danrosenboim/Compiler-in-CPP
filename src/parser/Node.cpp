@@ -5,10 +5,10 @@ Node::Node(NodeType type, Token token) : type(type) token(token)
 	
 }
 
-void Node::addChild(const Node& node)
+void Node::addChild(std::shared_ptr<Node> node)
 {
 	// Insert a new shared pointer into the children list
-	children.insert(std::make_shared<Node>(node));
+	children.insert(node);
 }
 
 Token Node::getToken() const

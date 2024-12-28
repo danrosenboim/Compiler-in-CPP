@@ -236,6 +236,7 @@ void Lexer::initiateReserves()
 	reserve(TokenType::FALSE, "false");
 	reserve(TokenType::FOR, "for");
 	reserve(TokenType::UNTIL, "until");
+	reserve(TokenType::FUNCTION, "function");
 	reserve(TokenType::RETURN, "return");
 	reserve(TokenType::OUT, "out");
 	reserve(TokenType::IN, "in");

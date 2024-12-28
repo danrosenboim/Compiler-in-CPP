@@ -79,6 +79,7 @@ std::string Token::typeToString(TokenType type)
         case TokenType::FOR: return "FOR";
 	case TokenType::UNTIL: return "UNTIL";
         case TokenType::RETURN: return "RETURN";
+	case TokenType::FUNCTION: return "FUNCTION";
         case TokenType::OUT: return "OUT";
 	case TokenType::IN: return "IN";
 	case TokenType::COMMENT: return "COMMENT";

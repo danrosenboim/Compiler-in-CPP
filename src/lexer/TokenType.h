@@ -22,7 +22,7 @@ enum TokenType
 
 	// Keywords
 	IF, THEN, ELSE, WHILE, TRUE, FALSE,
-	FOR, UNTIL, RETURN, OUT, IN,
+	FOR, UNTIL, FUNCTION, RETURN, OUT, IN,
 
 	// Skippable
 	WHITESPACE, COMMENT,

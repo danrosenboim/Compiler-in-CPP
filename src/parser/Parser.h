@@ -43,5 +43,7 @@ private:
 	Inputs: expectation
 	Outputs: none
 	*/
-	bool expect(TokenType type);
+	void expect(TokenType type);
+
+
 };

@@ -1,6 +1,6 @@
 #include "Node.h"
 
-Node::Node(Token token) : token(token)
+Node::Node(NodeType type, Token token) : type(type) token(token)
 {
 	
 }

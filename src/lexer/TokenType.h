@@ -27,6 +27,10 @@ enum TokenType
 	// Skippable
 	WHITESPACE, COMMENT,
 
-	END_OF_FILE
+	END_OF_FILE,
+	
+
+	// Parser
+	Node
 };
 

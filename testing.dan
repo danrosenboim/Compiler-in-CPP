@@ -4,7 +4,7 @@ for (i = 0) until (aasdf)
 
 }
 
-int hello1(text hello, int YAY)
+function int hello1(text hello, int YAY)
 {
 	
 	return YAY;

@@ -1,16 +1,16 @@
 #include "Token.h"
 
-Token::Token(TokenType tag, int lineNumber) : m_tag(tag), m_value(0), m_lineNumber(lineNumber) {}
+Token::Token(TokenType tag, int lineNumber) : m_tag(tag), m_lineNumber(lineNumber), m_value(0) {}
 
-Token::Token(TokenType tag, std::string s, int lineNumber) : m_tag(tag), m_value(s), m_lineNumber(lineNumber) {}
+Token::Token(TokenType tag, std::string s, int lineNumber) : m_tag(tag), m_lineNumber(lineNumber), m_value(s) {}
 
-Token::Token(TokenType tag, int i, int lineNumber) : m_tag(tag), m_value(i), m_lineNumber(lineNumber) {}
+Token::Token(TokenType tag, int i, int lineNumber) : m_tag(tag), m_lineNumber(lineNumber), m_value(i) {}
 
-Token::Token(TokenType tag, float f, int lineNumber) : m_tag(tag), m_value(f), m_lineNumber(lineNumber) {}
+Token::Token(TokenType tag, float f, int lineNumber) : m_tag(tag), m_lineNumber(lineNumber), m_value(f) {}
 
-Token::Token(TokenType tag, bool b, int lineNumber) : m_tag(tag), m_value(b), m_lineNumber(lineNumber) {}
+Token::Token(TokenType tag, bool b, int lineNumber) : m_tag(tag), m_lineNumber(lineNumber), m_value(b) {}
 
-Token::Token(const Token& other) : m_tag(other.m_tag), m_value(other.m_value), m_lineNumber(other.m_lineNumber) {}
+Token::Token(const Token& other) : m_tag(other.m_tag), m_lineNumber(other.m_lineNumber), m_value(other.m_value) {}
 
 TokenType Token::getTag() const
 {
@@ -80,6 +80,9 @@ std::string Token::typeToString(TokenType type)
 	case TokenType::UNTIL: return "UNTIL";
         case TokenType::RETURN: return "RETURN";
         case TokenType::OUT: return "OUT";
+	case TokenType::IN: return "IN";
+	case TokenType::COMMENT: return "COMMENT";
+	case TokenType::WHITESPACE: return "WHITESPACE";
         case TokenType::END_OF_FILE: return "END_OF_FILE";
         default: return "UNKNOWN";
     }

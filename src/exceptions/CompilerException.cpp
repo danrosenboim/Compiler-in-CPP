@@ -7,7 +7,7 @@ CompilerException::CompilerException(const std::string& msg, int lineNumber) : m
 
 void CompilerException::setMsg(const std::string& msg)
 {
-	m_msg = "Error at line " + std::to_string(m_lineNumber) + msg;
+	m_msg = "Error at line " + std::to_string(m_lineNumber) + ": " + msg;
 }
 
 const char* CompilerException::what() const noexcept

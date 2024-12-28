@@ -10,7 +10,7 @@ int hello1(text hello, int YAY)
 	return YAY;
 }
 
-
+string yay = ";
 int hello = 0;
 out hello;
 

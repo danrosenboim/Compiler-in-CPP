@@ -1,4 +1,4 @@
 #include "LexerUnknownSymbol.h"
 
-LexerUnknownSymbol::LexerUnknownSymbol(char symbol, int lineNumber) : LexerException(std::string("Unknown Symbol '") + symbol + "'", lineNumber) {}
+LexerUnknownSymbol::LexerUnknownSymbol(char symbol, int lineNumber) : LexerException("Unknown Symbol '" + std::string(1, symbol) + "'", lineNumber) {}
 

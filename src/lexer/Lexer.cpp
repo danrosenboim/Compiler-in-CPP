@@ -1,9 +1,11 @@
 #include "Lexer.h"
 
 Lexer::Lexer(std::string path) : m_filePath(path), m_currentLocation(0), m_lineNumber(1),
-	m_lexemeBegin(m_buffer1 - 1), m_forward(m_buffer1 - 1), m_previous("")
+	m_lexemeBegin(m_buffer1), m_forward(m_buffer1), m_previous("")
 {
 	initiateReserves();
+
+	readIntoBuffer(m_buffer1);
 }
 
 Token Lexer::getNextToken()

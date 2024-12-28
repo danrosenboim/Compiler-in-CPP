@@ -58,10 +58,19 @@ void Lexer::expect(TokenType type)
 }
 
 
-// Function -> Function IDENTIFIER "(" Parameters? ")" Block
+// Function -> Function Type IDENTIFIER "(" Parameters? ")" Block
 std::shared_ptr<Node> Lexer::parseFunction()
 {
 	auto functionNode = std::make_shared<Node>(NodeType::FUNCTION, Token(TokenType::NODE, currentToken.getLineNumber());
+	
+	functionNode->addChild(parseType());
+
+}
+
+// Type -> "num" | "text" | "float" | "bool"
+std::shared_ptr<Node Lexer::parseType()
+{
+
 }
 
 

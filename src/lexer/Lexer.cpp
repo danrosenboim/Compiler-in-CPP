@@ -223,8 +223,8 @@ void Lexer::initiateReserves()
 
 	// Types
 	reserve(TokenType::STRING, "text");
-	reserve(TokenType::INT, "int");
-	reserve(TokenType::FLOAT, "float");
+	reserve(TokenType::INT, "num");
+	reserve(TokenType::FLOAT, "real");
 	reserve(TokenType::BOOL, "bool");
 
 	// Keywords

@@ -8,7 +8,7 @@
 class Node
 {
 public:
-	Node(NodeType type, Token token);
+	Node(NodeType type, std::unique_ptr<Token> token);
 	~Node() = default;
 
 	/*
@@ -28,7 +28,7 @@ public:
 private:
 	// Type and token for value tracking and type
 	const NodeType type;
-	const Token token;
+	const std::unique_ptr<Token> token;
 
 	// Keep track of all the nodes' children
 	std::vector<std::shared_ptr<Node>> children;

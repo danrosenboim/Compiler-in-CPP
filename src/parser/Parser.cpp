@@ -11,7 +11,7 @@ Parser::Parser(std::shared_ptr<Lexer> scanner) : scanner(scanner)
 std::shared_ptr<Node> Parser::parseProgram()
 {
 	// Setting up AST head
-	auto programHead = std::make_shared<Node>(NodeType::PROGRAM, Token(TokenType::NODE, 0));
+	auto programHead = createNode(NodeType::PROGRAM);
 
 	// Continue parsing the program until its over
 	while(currentToken.getTag() != TokenType::END_OF_FILE)
@@ -57,22 +57,51 @@ void Lexer::expect(TokenType type)
 	}
 }
 
+static std::shared_ptr<Node> Lexer::createNode(NodeType type, TokenType tokenType, int lineNumber)
+{
+	return std::make_shared<Node>(type, std::make_unique<Token>(tokenType, lineNumber));
+}
+
+static std::shared_ptr<Node> Lexer::createNode(NodeType type, TokenType tokenType)
+{
+	// Calls the create node function without the line number
+	return createNode(type, tokenType, currentToken.getLineNumber());
+}
+
+static std::shared_ptr<Node> Lexer::createNode(NodeType type)
+{
+	// No token
+	return std::make_shared<Node>(type, nullptr);
+}
 
 // Function -> Function Type IDENTIFIER "(" Parameters? ")" Block
 std::shared_ptr<Node> Lexer::parseFunction()
 {
-	auto functionNode = std::make_shared<Node>(NodeType::FUNCTION, Token(TokenType::NODE, currentToken.getLineNumber());
+	auto functionNode = std::make_shared<Node>(NodeType::FUNCTION);
 	
+	// Type
 	functionNode->addChild(parseType());
 
+	// Identifier
+	functionNode->addChild(std::make_shared<Node>(NodeType::IDENTIFIER, Token(TokenType::IDENTIFIER, currentToken.getLineNumber()));
+	expect(TokenType::IDENTIFIER);
+	functionNode->addChild(parseType());
 }
 
-// Type -> "num" | "text" | "float" | "bool"
-std::shared_ptr<Node Lexer::parseType()
+// Type -> "num" | "text" | "real" | "bool"
+std::shared_ptr<Node> Lexer::parseType()
 {
+	auto typeNode = std::make_shared<Node>(NodeType::TYPE, Token(currentToken.getTag(), currentToken.getLineNumber());
 
+	// Check if the user inputted the expected input
+	if(!match(TokenType::INT) && !match(TokenType::STRING) && !match(TokenType::FLOAT) && !match(TokenType::BOOL))
+	{
+		// TODO make parser exceptions
+		throw std::runtime_error("Unexpected");
+	}
+
+	return typeNode;
 }
-
 
 
 

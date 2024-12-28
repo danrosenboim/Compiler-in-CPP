@@ -46,6 +46,28 @@ private:
 	void expect(TokenType type);
 
 	
+	/*
+	Function that creates a node with a speicified line number
+	Inputs: type of the node, type of the token
+	Outputs: returns a shared pointer to the created node
+	*/
+	static std::shared_ptr<Node> createNode(NodeType type, TokenType tokenType, int lineNumber);
+	/*
+	Function that creates a node
+	Inputs: type of the node, type of the token
+	Outputs: returns a shared pointer to the created node
+	*/
+	static std::shared_ptr<Node> createNode(NodeType type, TokenType tokenType);
+	
+	/*
+	Function that creates a node without a token
+	Inputs: type of the node
+	Outputs: shared pointer to the created node
+	*/
+	static std::shared_ptr<Node> createNode(NodeType type);
+
+	
 	// Parse functions that return a node
 	std::shared_ptr<Node> parseFunction();
+	std::shared_ptr<Node> parseType();
 };

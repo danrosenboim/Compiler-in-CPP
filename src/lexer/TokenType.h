@@ -29,8 +29,5 @@ enum TokenType
 
 	END_OF_FILE,
 	
-
-	// Parser
-	NODE
 };
 

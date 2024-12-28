@@ -10,9 +10,9 @@ int hello1(text hello, int YAY)
 	return YAY;
 }
 
-string yay = ";
-int hello = 0;
-out hello;
+text yay = "
+int hello = 0
+out hello
 
 if (hello == 0) then
 {

@@ -45,5 +45,7 @@ private:
 	*/
 	void expect(TokenType type);
 
-
+	
+	// Parse functions that return a node
+	std::shared_ptr<Node> parseFunction();
 };

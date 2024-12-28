@@ -17,6 +17,11 @@ TokenType Token::getTag() const
     return m_tag;
 }
 
+int Token::getLineNumber() const
+{
+	return m_lineNumber;
+}
+
 std::string Token::getLexeme() const
 {
     return std::get<std::string>(m_value);

@@ -19,10 +19,13 @@ public:
 
 	// Get functions for all the variables
 	TokenType getTag() const;
+	int getLineNumber() const;
+
 	std::string getLexeme() const;
 	int getNumber() const;
 	float getReal() const;
 	bool getBool() const;
+	
 
 	// Helping with print
 	friend std::ostream& operator<<(std::ostream& os, const Token& token);

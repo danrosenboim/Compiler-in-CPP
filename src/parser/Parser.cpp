@@ -7,6 +7,7 @@ Parser::Parser(std::shared_ptr<Lexer> scanner) : scanner(scanner)
 }
 
 
+// Program -> ( Function | Statement )*
 std::shared_ptr<Node> Parser::parseProgram()
 {
 	// Setting up AST head
@@ -18,13 +19,20 @@ std::shared_ptr<Node> Parser::parseProgram()
 		// A program can only be a function or statement
 		if(currentToken.getTag() == TokenType::FUNCTION)
 		{
-			programNode->addChild(parseFunction())
+			programHead->addChild(parseFunction());
+		}
+		else
+		{
+			programHead->addChild(parseStatement());
 		}
 	}
+
+	return programHead;
 }
 
 void Lexer::advance()
 {
+	// Read next token
 	currentToken = scanner->getNextToken();
 }
 
@@ -48,5 +56,14 @@ void Lexer::expect(TokenType type)
 		throw std::runtime_error("Unexpected");
 	}
 }
+
+
+// Function -> Function IDENTIFIER "(" Parameters? ")" Block
+std::shared_ptr<Node> Lexer::parseFunction()
+{
+	auto functionNode = std::make_shared<Node>(NodeType::FUNCTION, Token(TokenType::NODE, currentToken.getLineNumber());
+}
+
+
 
 

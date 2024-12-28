@@ -207,6 +207,11 @@ Token Lexer::identifierToken()
 	
 	// Create token using the current string
 	std::string currentString = m_previous + std::string(m_lexemeBegin, m_forward - m_lexemeBegin); 
+	if(currentString == "true" || currentString == "false")
+	{
+		return createToken(currentString == "true");
+	}
+
 	TokenType* tag = getReservedWord(currentString);
 	
 
@@ -232,8 +237,6 @@ void Lexer::initiateReserves()
 	reserve(TokenType::THEN, "then");
 	reserve(TokenType::ELSE, "else");
 	reserve(TokenType::WHILE, "while");
-	reserve(TokenType::TRUE, "true");
-	reserve(TokenType::FALSE, "false");
 	reserve(TokenType::FOR, "for");
 	reserve(TokenType::UNTIL, "until");
 	reserve(TokenType::FUNCTION, "function");

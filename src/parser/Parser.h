@@ -45,29 +45,29 @@ private:
 	*/
 	void expect(TokenType type);
 
-	
-	/*
-	Function that creates a node with a speicified line number
-	Inputs: type of the node, type of the token
-	Outputs: returns a shared pointer to the created node
-	*/
+	// Different variations of creating a node
+	// Return value is a shared pointer to the created node
+	static std::shared_ptr<Node> createNode(NodeType type, Token token);
 	static std::shared_ptr<Node> createNode(NodeType type, TokenType tokenType, int lineNumber);
-	/*
-	Function that creates a node
-	Inputs: type of the node, type of the token
-	Outputs: returns a shared pointer to the created node
-	*/
 	static std::shared_ptr<Node> createNode(NodeType type, TokenType tokenType);
-	
-	/*
-	Function that creates a node without a token
-	Inputs: type of the node
-	Outputs: shared pointer to the created node
-	*/
 	static std::shared_ptr<Node> createNode(NodeType type);
 
 	
 	// Parse functions that return a node
 	std::shared_ptr<Node> parseFunction();
 	std::shared_ptr<Node> parseType();
+	std::shared_ptr<Node> parseIdentifier();
+	std::shared_ptr<Node> parseParameters();
+	std::shared_ptr<Node> parseParameter();
+	std::shared_ptr<Node> parseBlock();
+	std::shared_ptr<Node> parseStatement();
+	
+	// Parse statement functions
+	std::shared_ptr<Node> parseForStatement();
+	std::shared_ptr<Node> parseIfStatement();
+	std::shared_ptr<Node> parseReturnStatement();
+	std::shared_ptr<Node> parseOutStatement();
+	std::shared_ptr<Node> parseInStatement();
+	std::shared_ptr<Node> parseAssignmentStatement();
+
 };

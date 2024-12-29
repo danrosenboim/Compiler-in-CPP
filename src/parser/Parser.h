@@ -45,6 +45,14 @@ private:
 	*/
 	void expect(TokenType type);
 
+	/*
+	Function type that checks if the token type is a comparison operator(== >=...)
+	Inputs: type - the type you want to check
+	Outputs: returns true if it is a comparison operator otherwise false.
+	*/
+	bool isComparisonOp(TokenType type);
+
+
 	// Different variations of creating a node
 	// Return value is a shared pointer to the created node
 	static std::shared_ptr<Node> createNode(NodeType type, Token token);
@@ -65,9 +73,15 @@ private:
 	// Parse statement functions
 	std::shared_ptr<Node> parseForStatement();
 	std::shared_ptr<Node> parseIfStatement();
+	std::shared_ptr<Node> parseElsePart();
 	std::shared_ptr<Node> parseReturnStatement();
 	std::shared_ptr<Node> parseOutStatement();
 	std::shared_ptr<Node> parseInStatement();
 	std::shared_ptr<Node> parseAssignmentStatement();
 
+	// Parse expression functions
+	std::shared_ptr<Node> parseExpression();
+	std::shared_ptr<Node> parseTerm1();
+	std::shared_ptr<Node> parseTerm2();
+	std::shared_ptr<Node> parseFactor();
 };

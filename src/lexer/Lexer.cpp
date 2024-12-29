@@ -30,8 +30,6 @@ Token Lexer::getNextToken()
 	case ')': return createTokenAndAdvance(TokenType::RIGHT_PAREN);
 	case '{': return createTokenAndAdvance(TokenType::LEFT_BRACE);
 	case '}': return createTokenAndAdvance(TokenType::RIGHT_BRACE);
-	case '[': return createTokenAndAdvance(TokenType::LEFT_BRACKET);
-	case ']': return createTokenAndAdvance(TokenType::RIGHT_BRACKET);
 	case ';': return createTokenAndAdvance(TokenType::SEMICOLON);
 	case ',': return createTokenAndAdvance(TokenType::COMMA);
 	case '-': return createTokenAndAdvance(TokenType::MINUS);
@@ -207,6 +205,11 @@ Token Lexer::identifierToken()
 	
 	// Create token using the current string
 	std::string currentString = m_previous + std::string(m_lexemeBegin, m_forward - m_lexemeBegin); 
+	if(currentString == "true" || currentString == "false")
+	{
+		return createToken(currentString == "true");
+	}
+
 	TokenType* tag = getReservedWord(currentString);
 	
 
@@ -223,8 +226,8 @@ void Lexer::initiateReserves()
 
 	// Types
 	reserve(TokenType::STRING, "text");
-	reserve(TokenType::INT, "int");
-	reserve(TokenType::FLOAT, "float");
+	reserve(TokenType::INT, "num");
+	reserve(TokenType::FLOAT, "real");
 	reserve(TokenType::BOOL, "bool");
 
 	// Keywords
@@ -232,10 +235,9 @@ void Lexer::initiateReserves()
 	reserve(TokenType::THEN, "then");
 	reserve(TokenType::ELSE, "else");
 	reserve(TokenType::WHILE, "while");
-	reserve(TokenType::TRUE, "true");
-	reserve(TokenType::FALSE, "false");
 	reserve(TokenType::FOR, "for");
 	reserve(TokenType::UNTIL, "until");
+	reserve(TokenType::FUNCTION, "function");
 	reserve(TokenType::RETURN, "return");
 	reserve(TokenType::OUT, "out");
 	reserve(TokenType::IN, "in");

@@ -1,17 +1,20 @@
 
-for (i = 0) until (aasdf)
+for (i = 0) until (asdfasdf)
 {
 
 }
 
-int hello1(text hello, int YAY)
+
+
+function int hello1(text hello, int YAY)
 {
 	
 	return YAY;
 }
 
 text yay = "
-int hello = 0
+num hello = 0
+real asdfasd = 0.0123;
 out hello
 
 if (hello == 0) then

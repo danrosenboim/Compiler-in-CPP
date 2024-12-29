@@ -1,10 +1,9 @@
 #pragma once
 
-enum TokenType
+enum class TokenType
 {
 	// Single-character tokens
 	LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
-	LEFT_BRACKET, RIGHT_BRACKET,
 	COMMA, SEMICOLON,
 
 	// Operators
@@ -22,11 +21,12 @@ enum TokenType
 
 	// Keywords
 	IF, THEN, ELSE, WHILE, TRUE, FALSE,
-	FOR, UNTIL, RETURN, OUT, IN,
+	FOR, UNTIL, FUNCTION, RETURN, OUT, IN,
 
 	// Skippable
 	WHITESPACE, COMMENT,
 
-	END_OF_FILE
+	END_OF_FILE,
+	
 };
 

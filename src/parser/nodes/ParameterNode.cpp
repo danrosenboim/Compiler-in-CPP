@@ -1,5 +1,16 @@
 #include "ParameterNode.h"
 
-ParameterNode::ParameterNode(std::unique_ptr<TypeNode> type, std::string id) : type(std::move(type)), identifier(id)
+
+ParameterNode::ParameterNode(int lineNumber) : Node(lineNumber), type(TypeKind::TEXT)
 {
+}
+
+void ParameterNode::setType(TypeKind type)
+{
+	this->type = type;
+}
+
+void ParameterNode::setIdentifier(std::string identifier)
+{
+	this->identifier = identifier;
 }

@@ -1,3 +1,4 @@
 #include "IdentifierExpr.h"
 
-IdentifierExpr::IdentifierExpr(std::string name) : name(name) {}
+IdentifierExpr::IdentifierExpr(int lineNumber, const std::string& name) : ExpressionNode(lineNumber), name(name)
+{}

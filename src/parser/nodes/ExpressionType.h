@@ -1,6 +1,6 @@
 #pragma once
 
-enum ExpressionType
+enum class ExpressionType
 {
 	// Basic operations
 	ADD, SUB, MUL, DIV,
@@ -10,4 +10,6 @@ enum ExpressionType
 	EQUAL_EQUAL,
 	LESS, LESS_EQUAL,
 	NOT, NOT_EQUAL,
-}
+
+	FUNCTION_CALL
+};

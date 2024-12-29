@@ -1,12 +1,17 @@
 #pragma once
 #include "Node.h"
+#include "TypeKind.h"
 
 class ParameterNode : public Node
 {
 public:
-	ParameterNode(std::unique_ptr<TypeNode> type, std::string id);
+	ParameterNode(int lineNumber);
+
+	// Setters for each variable
+	void setType(TypeKind type);
+	void setIdentifier(std::string identifier);
 
 private:
-	std::unique_ptr<TypeNode> type;
+	TypeKind type;
 	std::string identifier;
-}
+};

@@ -1,4 +1,11 @@
 #include "OutStatementNode.h"
 
-OutStatementNode::OutStatementNode(std::unique_ptr<ExpressionNode> expression) : expression(std::move(expression))
-{}
+
+OutStatementNode::OutStatementNode(int lineNumber) : StatementNode(lineNumber)
+{
+}
+
+void OutStatementNode::setExpression(std::unique_ptr<ExpressionNode> expression)
+{
+	this->expression = std::move(expression);
+}

@@ -1,7 +1,7 @@
 #pragma once
 
 // All possible types
-enum TypeKind
+enum class TypeKind
 {
 	NUM, TEXT, REAL, BOOL
-}
+};

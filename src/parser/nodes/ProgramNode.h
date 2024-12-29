@@ -7,6 +7,7 @@
 class ProgramNode : public Node
 {
 public:
+	ProgramNode(int lineNumber);
 
 	void addFunction(std::unique_ptr<FunctionNode> function);
 	void addStatement(std::unique_ptr<StatementNode> statement);
@@ -14,4 +15,4 @@ public:
 private:
 	std::vector<std::unique_ptr<FunctionNode>> functions;
 	std::vector<std::unique_ptr<StatementNode>> statements;
-}
+};

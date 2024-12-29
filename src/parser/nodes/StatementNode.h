@@ -4,6 +4,6 @@
 class StatementNode : public Node
 {
 public:
-	virtual ~Statement() = default;
-}
-
+	StatementNode(int lineNumber);
+	virtual ~StatementNode() = default;
+};

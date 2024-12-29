@@ -4,7 +4,7 @@
 class RealExpr : public ExpressionNode
 {
 public:
-	RealExpr(float value);
+	RealExpr(int lineNumber, float value);
 
 private:
 	float value;

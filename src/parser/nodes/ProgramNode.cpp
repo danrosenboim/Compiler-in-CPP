@@ -1,5 +1,7 @@
 #include "ProgramNode.h"
 
+ProgramNode::ProgramNode(int lineNumber) : Node(lineNumber)
+{ }
 
 void ProgramNode::addFunction(std::unique_ptr<FunctionNode> function)
 {

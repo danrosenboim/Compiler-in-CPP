@@ -2,11 +2,13 @@
 #include "ExpressionNode.h"
 #include "IfStatementNode.h"
 
-class ReturnStatement : public StatementNode
+class ReturnStatementNode : public StatementNode
 {
 public:
-	ReturnStatement(std::unique_ptr<ExpressionNode> expression);
+	ReturnStatementNode(int lineNumber);
+
+	void setExpression(std::unique_ptr<ExpressionNode> expression);
 
 private:
 	std::unique_ptr<ExpressionNode> expression;
-}
+};

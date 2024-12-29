@@ -6,8 +6,9 @@
 class InStatementNode : public StatementNode
 {
 public:
-	InStatementNode(std::string identifier);
+	InStatementNode(int lineNumber);
 
+	void setIdentifier(std::string id);
 private:
 	std::string identifier;
-}
+};

@@ -5,8 +5,11 @@
 class OutStatementNode : public StatementNode
 {
 public:
-	OutStatemenntNode(std::unique_ptr<ExpressionNode> expression);
+	OutStatementNode(int lineNumber);
+
+	void setExpression(std::unique_ptr<ExpressionNode> expression);
 
 private:
 	std::unique_ptr<ExpressionNode> expression;
-}
+
+};

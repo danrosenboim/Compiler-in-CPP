@@ -6,4 +6,4 @@ class ParserException : public CompilerException
 {
 public:
 	ParserException(const std::string& msg, int lineNumber);
-}
+};

@@ -1,3 +1,3 @@
 #include "StringExpr.h"
 
-StringExpr::StringExpr(std::string name) : name(name) {}
+StringExpr::StringExpr(int lineNumber, const std::string& value) : ExpressionNode(lineNumber), value(value) {}

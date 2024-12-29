@@ -1,8 +1,9 @@
 #pragma once
 #include "Node.h"
 
-class Expression : public Node
+class ExpressionNode : public Node
 {
 public:
-	virtual ~Expression() = default;
+	ExpressionNode(int lineNumber);
+	virtual ~ExpressionNode() = default;
 };

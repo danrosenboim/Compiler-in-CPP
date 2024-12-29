@@ -4,7 +4,7 @@
 class NumberExpr : public ExpressionNode
 {
 public:
-	NumberExpr(int value);
+	NumberExpr(int lineNumber, int value);
 
 private:
 	int value;

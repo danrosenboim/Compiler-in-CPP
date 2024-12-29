@@ -1,4 +1,12 @@
 #include "OutStatementNode.h"
+#include "InStatementNode.h"
 
-OutStatementNode::OutStatementNode(std::unique_ptr<ExpressionNode> expression) : expression(std::move(expression))
-{}
+
+InStatementNode::InStatementNode(int lineNumber) : StatementNode(lineNumber)
+{
+}
+
+void InStatementNode::setIdentifier(std::string id)
+{
+	this->identifier = id;
+}

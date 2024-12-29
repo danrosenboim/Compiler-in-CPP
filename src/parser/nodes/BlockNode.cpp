@@ -1,6 +1,10 @@
 #include "BlockNode.h"
 
-void BlockNode::addStatement(std::unique_ptr<Statement> statement)
+BlockNode::BlockNode(int lineNumber) : Node(lineNumber)
 {
-	statements.insert(std::move(statement));
+}
+
+void BlockNode::addStatement(std::unique_ptr<StatementNode> statement)
+{
+	statements.push_back(std::move(statement));
 }

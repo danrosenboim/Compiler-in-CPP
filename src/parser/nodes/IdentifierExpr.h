@@ -4,8 +4,8 @@
 class IdentifierExpr : public ExpressionNode
 {
 public:
-	IdentifierExpr(std::string name);
+	IdentifierExpr(int lineNumber, const std::string& name);
 
 private:
 	std::string name;
-} 
+};

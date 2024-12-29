@@ -1,3 +1,3 @@
 #include "RealExpr.h"
 
-RealExpr::RealExpr(float value) : value(value) {}
+RealExpr::RealExpr(int lineNumber, float value) : ExpressionNode(lineNumber), value(value) {}

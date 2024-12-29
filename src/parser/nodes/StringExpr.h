@@ -4,8 +4,8 @@
 class StringExpr : public ExpressionNode
 {
 public:
-	StringExpr(std::string value);
+	StringExpr(int lineNumber, const std::string& value);
 
 private:
 	std::string value;
-} 
+};

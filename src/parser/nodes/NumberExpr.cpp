@@ -1,4 +1,6 @@
 #include "NumberExpr.h"
 
-NumberExpr(int value) : value(value)
-{}
+
+NumberExpr::NumberExpr(int lineNumber, int value) : ExpressionNode(lineNumber), value(value)
+{
+}

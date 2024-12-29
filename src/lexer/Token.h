@@ -26,6 +26,8 @@ public:
 	float getReal() const;
 	bool getBool() const;
 	
+	// Function to help printing, converts from TokenType to a readable string
+	static std::string typeToString(TokenType type);
 
 	// Helping with print
 	friend std::ostream& operator<<(std::ostream& os, const Token& token);
@@ -40,8 +42,5 @@ private:
 	// (not using union because it doesnt support std::string and less reliable)
 	// Variant allows us to create different types of variables using the same memory location	
 	const std::variant<std::string, int, float, bool> m_value;
-
-	// Function to help printing, converts from TokenType to a readable string
-	static std::string typeToString(TokenType type);
 
 };

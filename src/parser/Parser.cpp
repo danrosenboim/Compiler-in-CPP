@@ -42,7 +42,7 @@ void Parser::advance()
 bool Parser::match(TokenType type)
 {
 	// Advance if we match correctly
-	if(currentToken->type == type)
+	if(currentToken.getTag() == type)
 	{
 		advance();
 		return true;
@@ -55,8 +55,7 @@ void Parser::expect(TokenType type)
 	// Check if the result equals the expectation
 	if(!match(type))
 	{
-		// TODO make parser exceptions
-		throw std::runtime_error("Unexpected");
+		throw ParserUnexpected(Token::typeToString(currentToken.getTag()), Token::typeToString(type), currentToken.getLineNumber());
 	}
 }
 
@@ -70,23 +69,23 @@ bool Parser::isComparisonOp(TokenType type)
                type == TokenType::LESS;
 }
 
-static std::shared_ptr<Node> Parser::createNode(NodeType type, Token token)
+std::shared_ptr<Node> Parser::createNode(NodeType type, Token token)
 {
 	return std::make_shared<Node>(type, std::make_unique<Token>(token));
 }
 
-static std::shared_ptr<Node> Parser::createNode(NodeType type, TokenType tokenType, int lineNumber)
+std::shared_ptr<Node> Parser::createNode(NodeType type, TokenType tokenType, int lineNumber)
 {
 	return std::make_shared<Node>(type, std::make_unique<Token>(tokenType, lineNumber));
 }
 
-static std::shared_ptr<Node> Parser::createNode(NodeType type, TokenType tokenType)
+std::shared_ptr<Node> Parser::createNode(NodeType type, TokenType tokenType)
 {
 	// Calls the create node function without the line number
 	return createNode(type, tokenType, currentToken.getLineNumber());
 }
 
-static std::shared_ptr<Node> Parser::createNode(NodeType type)
+std::shared_ptr<Node> Parser::createNode(NodeType type)
 {
 	// No token
 	return std::make_shared<Node>(type, nullptr);
@@ -126,8 +125,7 @@ std::shared_ptr<Node> Parser::parseType()
 	// Check if the user inputted the expected input
 	if(!match(TokenType::INT) && !match(TokenType::STRING) && !match(TokenType::FLOAT) && !match(TokenType::BOOL))
 	{
-		// TODO make parser exceptions
-		throw std::runtime_error("Unexpected");
+		throw ParserUnexpected(Token::typeToString(currentToken.getTag()), "type", currentToken.getLineNumber());
 	}
 
 	return typeNode;
@@ -389,8 +387,7 @@ std::shared_ptr<Node> Paser::parseFactor()
 		expect(TokenType::RIGHT_PAREN);
 		return expr;
 	default:
-		// TODO: parser error
-		throw std::runtime_error("PARSER ERROR");
+		throw ParserUnexpected(currentToken.getTag(), "type or expression", currentToken.getLineNumber());
 
 	}
 }

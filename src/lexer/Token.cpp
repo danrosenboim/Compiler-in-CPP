@@ -64,7 +64,7 @@ std::string Token::typeToString(TokenType type)
         case TokenType::GREATER_EQUAL: return "GREATER_EQUAL";
         case TokenType::LESS: return "LESS";
         case TokenType::LESS_EQUAL: return "LESS_EQUAL";
-        case TokenType::NOT: return "NOT";
+	case TokenType::NOT: return "NOT";
         case TokenType::NOT_EQUAL: return "NOT_EQUAL";
         case TokenType::IDENTIFIER: return "IDENTIFIER";
         case TokenType::TEXT: return "TEXT";

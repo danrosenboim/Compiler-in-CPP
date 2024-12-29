@@ -1,6 +1,7 @@
 #pragma once
 #include "Node.h"
 #include "../lexer/Lexer.h"
+#include "../exceptions/parser/ParserUnexpected.h"
 
 
 // Parser class will use the previously built lexer to create an AST

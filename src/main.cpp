@@ -6,7 +6,9 @@ int main()
 	std::string filePath = "testing.dan";
 
 	// Run the compiler with the source code file
-	Compiler compiler(filePath);	
+	Compiler compiler(filePath);
+
+	compiler.run();
 
 	return 0;
 }

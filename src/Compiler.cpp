@@ -4,3 +4,8 @@ Compiler::Compiler(const std::string& filePath) : m_filePath(filePath), scanner(
 { }
 
 
+void Compiler::run()
+{
+	parser->parseProgram();
+}
+

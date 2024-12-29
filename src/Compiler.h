@@ -8,6 +8,7 @@ class Compiler
 {
 public:
 	Compiler(const std::string& filePath);
+	void run();
 
 private:
 	// The file path of the source code

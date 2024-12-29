@@ -50,8 +50,6 @@ std::string Token::typeToString(TokenType type)
     case TokenType::RIGHT_PAREN: return "RIGHT_PAREN";
     case TokenType::LEFT_BRACE: return "LEFT_BRACE";
     case TokenType::RIGHT_BRACE: return "RIGHT_BRACE";
-    case TokenType::LEFT_BRACKET: return "LEFT_BRACKET";
-    case TokenType::RIGHT_BRACKET: return "RIGHT_BRACKET";
     case TokenType::COMMA: return "COMMA";
     case TokenType::SEMICOLON: return "SEMICOLON";
     case TokenType::MINUS: return "MINUS";

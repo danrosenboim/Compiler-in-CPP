@@ -30,8 +30,6 @@ Token Lexer::getNextToken()
 	case ')': return createTokenAndAdvance(TokenType::RIGHT_PAREN);
 	case '{': return createTokenAndAdvance(TokenType::LEFT_BRACE);
 	case '}': return createTokenAndAdvance(TokenType::RIGHT_BRACE);
-	case '[': return createTokenAndAdvance(TokenType::LEFT_BRACKET);
-	case ']': return createTokenAndAdvance(TokenType::RIGHT_BRACKET);
 	case ';': return createTokenAndAdvance(TokenType::SEMICOLON);
 	case ',': return createTokenAndAdvance(TokenType::COMMA);
 	case '-': return createTokenAndAdvance(TokenType::MINUS);

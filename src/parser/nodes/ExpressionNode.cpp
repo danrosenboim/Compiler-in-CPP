@@ -29,3 +29,8 @@ bool ExpressionNode::getNeedsConversion() const
 	return needsConversion;
 }
 
+ExpressionType ExpressionNode::getExpressionVariant() const
+{
+	return ExpressionType::ERROR;
+}
+

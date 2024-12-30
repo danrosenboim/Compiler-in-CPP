@@ -8,3 +8,13 @@ void ReturnStatementNode::setExpression(std::shared_ptr<ExpressionNode> expressi
 {
 	this->expression = std::move(expression);
 }
+
+std::shared_ptr<ExpressionNode> ReturnStatementNode::getExpression() const
+{
+	return expression;
+}
+
+StatementType ReturnStatementNode::getStatementType() const
+{
+	return StatementType::RETURN;
+}

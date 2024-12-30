@@ -14,3 +14,13 @@ void ParameterNode::setIdentifier(std::string identifier)
 {
 	this->identifier = identifier;
 }
+
+TypeKind ParameterNode::getType() const
+{
+	return type;
+}
+
+std::string ParameterNode::getIdentifier() const
+{
+	return identifier;
+}

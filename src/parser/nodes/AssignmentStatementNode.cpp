@@ -14,3 +14,18 @@ void AssignmentStatementNode::setExpression(std::shared_ptr<ExpressionNode> expr
 {
 	this->expression = std::move(expression);
 }
+
+std::string AssignmentStatementNode::getIdentifier() const
+{
+	return identifier;
+}
+
+std::shared_ptr<ExpressionNode> AssignmentStatementNode::getExpression() const
+{
+	return expression;
+}
+
+StatementType AssignmentStatementNode::getStatementType() const
+{
+	return StatementType::ASSIGNMENT;
+}

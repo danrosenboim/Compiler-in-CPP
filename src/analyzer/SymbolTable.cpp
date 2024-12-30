@@ -30,7 +30,7 @@ void SymbolTable::addEntryToLatest(const Symbol& symbol)
 	symbolTableStack.back()[symbol.varName] = std::make_shared<Symbol>(symbol);
 }
 
-Symbol* SymbolTable::tableLookup(const std::string& name) const
+std::shared_ptr<Symbol> SymbolTable::tableLookup(const std::string& name) const
 {
 	// Loop through the vector backwards
 	for(auto elem = symbolTableStack.rbegin(); elem != symbolTableStack.rend(); ++elem)
@@ -38,18 +38,19 @@ Symbol* SymbolTable::tableLookup(const std::string& name) const
 		auto it = elem->find(name);
 		if(it != elem->end())
 		{
-			return it->second.get();
+			return it->second;
 		}
 	}
+
 	return nullptr;
 }
 
-Symbol* SymbolTable::currentScopeLookup(const std::string& name) const
+std::shared_ptr<Symbol> SymbolTable::currentScopeLookup(const std::string& name) const
 {
 	auto it = symbolTableStack.back().find(name);
 	if(it != symbolTableStack.back().end())
 	{
-		return it->second.get();
+		return it->second;
 	}
 
 	return nullptr;

@@ -18,3 +18,23 @@ void IfStatementNode::setElseBlock(std::shared_ptr<BlockNode> elseBlock)
 {
 	this->elseBlock = std::move(elseBlock);
 }
+
+std::shared_ptr<ExpressionNode> IfStatementNode::getCondition() const
+{
+	return condition;
+}
+
+std::shared_ptr<BlockNode> IfStatementNode::getBody() const
+{
+	return body;
+}
+
+std::shared_ptr<BlockNode> IfStatementNode::getElseBlock() const
+{
+	return elseBlock;
+}
+
+StatementType IfStatementNode::getStatementType() const
+{
+	return StatementType::IF;
+}

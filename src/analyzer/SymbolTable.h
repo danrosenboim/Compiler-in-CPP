@@ -44,13 +44,13 @@ public:
 	Inputs: the name of the variable
 	Outputs: returns the symbol
 	*/
-	Symbol* tableLookup(const std::string& name) const;
+	std::shared_ptr<Symbol> tableLookup(const std::string& name) const;
 
 	/*
 	Looksup in the current scope, this function will help us find redefinitions of the same variable
 	Input: name of the variable to search for
 	Outputs: returns the symbol if found*/
-	Symbol* currentScopeLookup(const std::string& name) const;
+	std::shared_ptr<Symbol> currentScopeLookup(const std::string& name) const;
 
 private:
 	// Using a stack to express all the blocks, the latest item in the stack is the

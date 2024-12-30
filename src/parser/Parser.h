@@ -6,7 +6,7 @@
 #include "nodes/BinaryExpr.h"
 #include "nodes/BlockNode.h"
 #include "nodes/ExpressionNode.h"
-#include "nodes/ExpressionType.h"
+#include "nodes/BinaryExprType.h"
 #include "nodes/ForStatementNode.h"
 #include "nodes/IfStatementNode.h"
 #include "nodes/FunctionNode.h"
@@ -74,7 +74,7 @@ private:
 	Inputs: type - the type you want to check, a reference to an expression type so it can change it
 	Outputs: returns true if it is a comparison operator otherwise false.
 	*/
-	bool isComparisonOp(TokenType type, ExpressionType& exType);
+	bool isComparisonOp(TokenType type, BinaryExprType& exType);
 
 	/*
 	Uses the current token to determine what type it should return

@@ -12,6 +12,8 @@ public:
 	// Outputs: none
 	void addStatement(std::shared_ptr<StatementNode> statement);
 
+	std::vector<std::shared_ptr<StatementNode>> getStatements() const;
+
 private:
 	std::vector<std::shared_ptr<StatementNode>> statements;
 

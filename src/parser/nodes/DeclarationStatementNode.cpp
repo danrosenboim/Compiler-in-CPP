@@ -18,3 +18,23 @@ void DeclarationStatementNode::setInitializer(std::shared_ptr<ExpressionNode> ex
 {
 	this->initializer = std::move(expression);
 }
+
+TypeKind DeclarationStatementNode::getType() const
+{
+	return type;
+}
+
+std::string DeclarationStatementNode::getIdentifier() const
+{
+	return identifier;
+}
+
+std::shared_ptr<ExpressionNode> DeclarationStatementNode::getInitializer() const
+{
+	return initializer;
+}
+
+StatementType DeclarationStatementNode::getStatementType() const
+{
+	return StatementType::DECLARATION;
+}

@@ -59,27 +59,27 @@ void Parser::expect(TokenType type)
 	}
 }
 
-bool Parser::isComparisonOp(TokenType type, ExpressionType& exType)
+bool Parser::isComparisonOp(TokenType type, BinaryExprType& exType)
 {
 	switch (type)
 	{
 	case TokenType::EQUAL_EQUAL:
-		exType = ExpressionType::EQUAL_EQUAL;
+		exType = BinaryExprType::EQUAL_EQUAL;
 		break;
 	case TokenType::NOT_EQUAL:
-		exType = ExpressionType::NOT_EQUAL;
+		exType = BinaryExprType::NOT_EQUAL;
 		break;
 	case TokenType::GREATER_EQUAL:
-		exType = ExpressionType::GREATER_EQUAL;
+		exType = BinaryExprType::GREATER_EQUAL;
 		break;
 	case TokenType::GREATER:
-		exType = ExpressionType::GREATER;
+		exType = BinaryExprType::GREATER;
 		break;
 	case TokenType::LESS_EQUAL:
-		exType = ExpressionType::LESS_EQUAL;
+		exType = BinaryExprType::LESS_EQUAL;
 		break;
 	case TokenType::LESS:
-		exType = ExpressionType::LESS;
+		exType = BinaryExprType::LESS;
 		break;
 	default: return false;
 	}
@@ -340,7 +340,7 @@ std::shared_ptr<AssignmentStatementNode> Parser::parseAssignmentStatement()
 std::shared_ptr<ExpressionNode> Parser::parseExpression()
 {
 	auto expressionNode = parseTerm1();
-	ExpressionType exType;
+	BinaryExprType exType;
 
 	if(isComparisonOp(currentToken.getTag(), exType))
 	{
@@ -370,11 +370,11 @@ std::shared_ptr<ExpressionNode> Parser::parseTerm1()
 		// Check what operator to do
 		if (currentToken.getTag() == TokenType::PLUS)
 		{
-			opNode->setType(ExpressionType::ADD);
+			opNode->setType(BinaryExprType::ADD);
 		}
 		else
 		{
-			opNode->setType(ExpressionType::SUB);
+			opNode->setType(BinaryExprType::SUB);
 		}
 		advance();
 
@@ -401,11 +401,11 @@ std::shared_ptr<ExpressionNode> Parser::parseTerm2()
 		// Check what operator to do
 		if (currentToken.getTag() == TokenType::STAR)
 		{
-			opNode->setType(ExpressionType::MUL);
+			opNode->setType(BinaryExprType::MUL);
 		}
 		else
 		{
-			opNode->setType(ExpressionType::DIV);
+			opNode->setType(BinaryExprType::DIV);
 		}
 		advance();
 

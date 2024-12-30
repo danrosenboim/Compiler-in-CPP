@@ -88,7 +88,7 @@ bool Parser::isComparisonOp(TokenType type, ExpressionType& exType)
 
 
 // Function -> Function Type IDENTIFIER "(" Parameters? ")" Block
-std::unique_ptr<FunctionNode> Parser::parseFunction()
+std::shared_ptr<FunctionNode> Parser::parseFunction()
 {
 	auto functionNode = std::make_unique<FunctionNode>(currentToken.getLineNumber());
 
@@ -105,7 +105,7 @@ std::unique_ptr<FunctionNode> Parser::parseFunction()
 
 	if(currentToken.getTag() != TokenType::RIGHT_PAREN)
 	{
-		std::vector<std::unique_ptr<ParameterNode>> parameters = parseParameters();
+		std::vector<std::shared_ptr<ParameterNode>> parameters = parseParameters();
 		functionNode->setParameters(parameters);
 	}
 
@@ -145,9 +145,9 @@ std::string Parser::parseIdentifier()
 
 // Parameters -> Parameter ParameterTail*
 // ParameterTail* -> "," Parameter
-std::vector<std::unique_ptr<ParameterNode>> Parser::parseParameters()
+std::vector<std::shared_ptr<ParameterNode>> Parser::parseParameters()
 {
-	std::vector<std::unique_ptr<ParameterNode>> parametersVector;
+	std::vector<std::shared_ptr<ParameterNode>> parametersVector;
 
 	// Initial parameter
 	parametersVector.push_back(parseParameter());
@@ -162,9 +162,9 @@ std::vector<std::unique_ptr<ParameterNode>> Parser::parseParameters()
 }
 
 // Parameter -> Type IDENTIFIER
-std::unique_ptr<ParameterNode> Parser::parseParameter()
+std::shared_ptr<ParameterNode> Parser::parseParameter()
 {
-	auto paramNode = std::make_unique<ParameterNode>(currentToken.getLineNumber());
+	auto paramNode = std::make_shared<ParameterNode>(currentToken.getLineNumber());
 
 	paramNode->setType(parseType());
 	advance();
@@ -174,9 +174,9 @@ std::unique_ptr<ParameterNode> Parser::parseParameter()
 }
 
 // Block -> "{" Statement* "}"
-std::unique_ptr<BlockNode> Parser::parseBlock()
+std::shared_ptr<BlockNode> Parser::parseBlock()
 {
-	auto blockNode = std::make_unique<BlockNode>(currentToken.getLineNumber());
+	auto blockNode = std::make_shared<BlockNode>(currentToken.getLineNumber());
 
 	expect(TokenType::LEFT_BRACE);
 	
@@ -193,7 +193,7 @@ std::unique_ptr<BlockNode> Parser::parseBlock()
 
 
 // Statement -> ForStmt | IfStmt | ReturnStmt | OutStmt | InStmt | DeclarationStmt | AssignmentStmt
-std::unique_ptr<StatementNode> Parser::parseStatement()
+std::shared_ptr<StatementNode> Parser::parseStatement()
 {
 	switch(currentToken.getTag())
 	{
@@ -212,9 +212,9 @@ std::unique_ptr<StatementNode> Parser::parseStatement()
 }
 
 // ForStmt -> "for" "(" IDENTIFIER "=" Expression ")" "until" "(" Expression ")" Block
-std::unique_ptr<ForStatementNode> Parser::parseForStatement()
+std::shared_ptr<ForStatementNode> Parser::parseForStatement()
 {
-	auto forNode = std::make_unique<ForStatementNode>(currentToken.getLineNumber());
+	auto forNode = std::make_shared<ForStatementNode>(currentToken.getLineNumber());
 	
 	advance();
 
@@ -241,9 +241,9 @@ std::unique_ptr<ForStatementNode> Parser::parseForStatement()
 }
 
 // IfStmt -> "if" "(" Expression ")" "then" Block ElsePart?
-std::unique_ptr<IfStatementNode> Parser::parseIfStatement()
+std::shared_ptr<IfStatementNode> Parser::parseIfStatement()
 {
-	std::unique_ptr<IfStatementNode> ifNode = std::make_unique<IfStatementNode>(currentToken.getLineNumber());
+	std::shared_ptr<IfStatementNode> ifNode = std::make_shared<IfStatementNode>(currentToken.getLineNumber());
 	
 	advance();
 
@@ -267,9 +267,9 @@ std::unique_ptr<IfStatementNode> Parser::parseIfStatement()
 }
 
 // ReturnStmt -> "return" Expression ";"
-std::unique_ptr<ReturnStatementNode> Parser::parseReturnStatement()
+std::shared_ptr<ReturnStatementNode> Parser::parseReturnStatement()
 {
-	std::unique_ptr<ReturnStatementNode> returnStatement = std::make_unique<ReturnStatementNode>(currentToken.getLineNumber());
+	std::shared_ptr<ReturnStatementNode> returnStatement = std::make_shared<ReturnStatementNode>(currentToken.getLineNumber());
 	advance();
 
 	returnStatement->setExpression(parseExpression());
@@ -279,9 +279,9 @@ std::unique_ptr<ReturnStatementNode> Parser::parseReturnStatement()
 }
 
 // OutStmt -> "out" Expression ";"
-std::unique_ptr<OutStatementNode> Parser::parseOutStatement()
+std::shared_ptr<OutStatementNode> Parser::parseOutStatement()
 {
-	std::unique_ptr<OutStatementNode> outStatement = std::make_unique<OutStatementNode>(currentToken.getLineNumber());
+	std::shared_ptr<OutStatementNode> outStatement = std::make_shared<OutStatementNode>(currentToken.getLineNumber());
 	advance();
 
 	outStatement->setExpression(parseExpression());
@@ -291,9 +291,9 @@ std::unique_ptr<OutStatementNode> Parser::parseOutStatement()
 }
 
 // InStmt -> "in" IDENTIFIER ";"
-std::unique_ptr<InStatementNode> Parser::parseInStatement()
+std::shared_ptr<InStatementNode> Parser::parseInStatement()
 {
-	auto inStatement = std::make_unique<InStatementNode>(currentToken.getLineNumber());
+	auto inStatement = std::make_shared<InStatementNode>(currentToken.getLineNumber());
 	advance();
 	inStatement->setIdentifier(parseIdentifier());
 	expect(TokenType::SEMICOLON);
@@ -302,9 +302,9 @@ std::unique_ptr<InStatementNode> Parser::parseInStatement()
 }
 
 // DeclarationStmt -> type IDENTIFIER ("=" Expression)? ";"
-std::unique_ptr<DeclarationStatementNode> Parser::parseDeclarationStatement()
+std::shared_ptr<DeclarationStatementNode> Parser::parseDeclarationStatement()
 {
-	auto declarationNode = std::make_unique<DeclarationStatementNode>(currentToken.getLineNumber());
+	auto declarationNode = std::make_shared<DeclarationStatementNode>(currentToken.getLineNumber());
 
 	// Get the type and advance
 	declarationNode->setType(parseType());
@@ -325,9 +325,9 @@ std::unique_ptr<DeclarationStatementNode> Parser::parseDeclarationStatement()
 }
 
 // AssignmentStmt -> IDENTIFIER "=" Expression ";"
-std::unique_ptr<AssignmentStatementNode> Parser::parseAssignmentStatement()
+std::shared_ptr<AssignmentStatementNode> Parser::parseAssignmentStatement()
 {
-	auto assignmentStatementNode = std::make_unique<AssignmentStatementNode>(currentToken.getLineNumber());
+	auto assignmentStatementNode = std::make_shared<AssignmentStatementNode>(currentToken.getLineNumber());
 	assignmentStatementNode->setIdentifier(parseIdentifier());
 	expect(TokenType::EQUAL);
 	assignmentStatementNode->setExpression(parseExpression());
@@ -337,14 +337,14 @@ std::unique_ptr<AssignmentStatementNode> Parser::parseAssignmentStatement()
 }
 
 // Expression -> Term1 ComparisonTail?
-std::unique_ptr<ExpressionNode> Parser::parseExpression()
+std::shared_ptr<ExpressionNode> Parser::parseExpression()
 {
 	auto expressionNode = parseTerm1();
 	ExpressionType exType;
 
 	if(isComparisonOp(currentToken.getTag(), exType))
 	{
-		auto exprNode = std::make_unique<BinaryExpr>(currentToken.getLineNumber());
+		auto exprNode = std::make_shared<BinaryExpr>(currentToken.getLineNumber());
 
 		exprNode->setType(exType);
 		advance();
@@ -357,7 +357,7 @@ std::unique_ptr<ExpressionNode> Parser::parseExpression()
 }
 
 // Term1 -> Term2 Term1Tail*
-std::unique_ptr<ExpressionNode> Parser::parseTerm1()
+std::shared_ptr<ExpressionNode> Parser::parseTerm1()
 {
 	auto left = parseTerm2();
 
@@ -365,7 +365,7 @@ std::unique_ptr<ExpressionNode> Parser::parseTerm1()
 	while(currentToken.getTag() == TokenType::PLUS || currentToken.getTag() == TokenType::MINUS)
 	{
 		// Create a main node and append both operands to it
-		auto opNode = std::make_unique<BinaryExpr>(currentToken.getLineNumber());
+		auto opNode = std::make_shared<BinaryExpr>(currentToken.getLineNumber());
 
 		// Check what operator to do
 		if (currentToken.getTag() == TokenType::PLUS)
@@ -388,7 +388,7 @@ std::unique_ptr<ExpressionNode> Parser::parseTerm1()
 }
 
 // Term2 -> Factor Term2Tail*
-std::unique_ptr<ExpressionNode> Parser::parseTerm2()
+std::shared_ptr<ExpressionNode> Parser::parseTerm2()
 {
 	auto left = parseFactor();
 
@@ -396,7 +396,7 @@ std::unique_ptr<ExpressionNode> Parser::parseTerm2()
 	while(currentToken.getTag() == TokenType::STAR || currentToken.getTag() == TokenType::SLASH)
 	{
 		// Create a main node and append both operands to it
-		auto opNode = std::make_unique<BinaryExpr>(currentToken.getLineNumber());
+		auto opNode = std::make_shared<BinaryExpr>(currentToken.getLineNumber());
 		
 		// Check what operator to do
 		if (currentToken.getTag() == TokenType::STAR)
@@ -419,15 +419,15 @@ std::unique_ptr<ExpressionNode> Parser::parseTerm2()
 }
 
 // Factor -> NUMBER | STRING | FLOAT | BOOL | IDENTIFIER | "(" Expression ")"
-std::unique_ptr<ExpressionNode> Parser::parseFactor()
+std::shared_ptr<ExpressionNode> Parser::parseFactor()
 {
-	std::unique_ptr<ExpressionNode> expr = nullptr;
-	std::unique_ptr<FunctionCallExpr> funcCall = nullptr;
-	std::unique_ptr<NotExpr> notExpr = nullptr;
-	std::unique_ptr<NumberExpr> numExpr = nullptr;
-	std::unique_ptr<StringExpr> strExpr = nullptr;
-	std::unique_ptr<BoolExpr> boolExpr = nullptr;
-	std::unique_ptr<RealExpr> realExpr = nullptr;
+	std::shared_ptr<ExpressionNode> expr = nullptr;
+	std::shared_ptr<FunctionCallExpr> funcCall = nullptr;
+	std::shared_ptr<NotExpr> notExpr = nullptr;
+	std::shared_ptr<NumberExpr> numExpr = nullptr;
+	std::shared_ptr<StringExpr> strExpr = nullptr;
+	std::shared_ptr<BoolExpr> boolExpr = nullptr;
+	std::shared_ptr<RealExpr> realExpr = nullptr;
 	std::string name = "";
 
 
@@ -435,7 +435,7 @@ std::unique_ptr<ExpressionNode> Parser::parseFactor()
 	{
 	// Handle NOT operator
 	case TokenType::NOT:
-		notExpr = std::make_unique<NotExpr>(currentToken.getLineNumber());
+		notExpr = std::make_shared<NotExpr>(currentToken.getLineNumber());
 		advance();
 		notExpr->setExpression(parseFactor());
 		return notExpr;
@@ -443,19 +443,19 @@ std::unique_ptr<ExpressionNode> Parser::parseFactor()
 		
 	// Incase of a literal advance and return
 	case TokenType::NUMBER:
-		numExpr = std::make_unique<NumberExpr>(currentToken.getLineNumber(), currentToken.getNumber());
+		numExpr = std::make_shared<NumberExpr>(currentToken.getLineNumber(), currentToken.getNumber());
 		advance();
 		return numExpr;
 	case TokenType::TEXT:
-		strExpr = std::make_unique<StringExpr>(currentToken.getLineNumber(), currentToken.getLexeme());
+		strExpr = std::make_shared<StringExpr>(currentToken.getLineNumber(), currentToken.getLexeme());
 		advance();
 		return strExpr;
 	case TokenType::BOOL:
-		boolExpr = std::make_unique<BoolExpr>(currentToken.getLineNumber(), currentToken.getBool());
+		boolExpr = std::make_shared<BoolExpr>(currentToken.getLineNumber(), currentToken.getBool());
 		advance();
 		return boolExpr;
 	case TokenType::REAL:
-		realExpr = std::make_unique<RealExpr>(currentToken.getLineNumber(), currentToken.getReal());
+		realExpr = std::make_shared<RealExpr>(currentToken.getLineNumber(), currentToken.getReal());
 		advance();
 		return realExpr;
 	
@@ -465,7 +465,7 @@ std::unique_ptr<ExpressionNode> Parser::parseFactor()
 
 		// Check if it's a function call
 		if (currentToken.getTag() == TokenType::LEFT_PAREN) {
-			funcCall = std::make_unique<FunctionCallExpr>(currentToken.getLineNumber());
+			funcCall = std::make_shared<FunctionCallExpr>(currentToken.getLineNumber());
 			funcCall->setName(name);
 
 			advance();  // skip (
@@ -486,7 +486,7 @@ std::unique_ptr<ExpressionNode> Parser::parseFactor()
 		}
 
 		// If no parentheses, it's a regular identifier
-		return std::make_unique<IdentifierExpr>(currentToken.getLineNumber() - 1, name);
+		return std::make_shared<IdentifierExpr>(currentToken.getLineNumber() - 1, name);
 
 	case TokenType::LEFT_PAREN:
 		advance();

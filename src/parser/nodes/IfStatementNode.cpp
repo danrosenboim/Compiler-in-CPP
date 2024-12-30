@@ -4,21 +4,17 @@ IfStatementNode::IfStatementNode(int lineNumber) : StatementNode(lineNumber), co
 {
 }
 
-void IfStatementNode::setCondition(std::unique_ptr<ExpressionNode> condition)
+void IfStatementNode::setCondition(std::shared_ptr<ExpressionNode> condition)
 {
 	this->condition = std::move(condition);
 }
 
-void IfStatementNode::setBody(std::unique_ptr<BlockNode> body)
+void IfStatementNode::setBody(std::shared_ptr<BlockNode> body)
 {
 	this->body = std::move(body);
 }
 
-void IfStatementNode::setElseBlock(std::unique_ptr<BlockNode> elseBlock)
+void IfStatementNode::setElseBlock(std::shared_ptr<BlockNode> elseBlock)
 {
 	this->elseBlock = std::move(elseBlock);
 }
-
-std::unique_ptr<ExpressionNode> condition;
-std::unique_ptr<BlockNode> body;
-std::unique_ptr<BlockNode> elseBlock;

@@ -9,9 +9,9 @@ public:
 	AssignmentStatementNode(int lineNumber);
 
 	void setIdentifier(std::string id);
-	void setExpression(std::unique_ptr<ExpressionNode> expression);
+	void setExpression(std::shared_ptr<ExpressionNode> expression);
 
 private:
 	std::string identifier;
-	std::unique_ptr<ExpressionNode> expression;
+	std::shared_ptr<ExpressionNode> expression;
 };

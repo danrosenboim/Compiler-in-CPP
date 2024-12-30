@@ -4,7 +4,7 @@ ReturnStatementNode::ReturnStatementNode(int lineNumber) : StatementNode(lineNum
 {
 }
 
-void ReturnStatementNode::setExpression(std::unique_ptr<ExpressionNode> expression)
+void ReturnStatementNode::setExpression(std::shared_ptr<ExpressionNode> expression)
 {
 	this->expression = std::move(expression);
 }

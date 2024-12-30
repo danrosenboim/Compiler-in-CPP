@@ -11,10 +11,10 @@ public:
 
 	void setType(TypeKind type);
 	void setIdentifier(std::string id);
-	void setInitializer(std::unique_ptr<ExpressionNode> expression);
+	void setInitializer(std::shared_ptr<ExpressionNode> expression);
 
 private:
 	TypeKind type;
 	std::string identifier;
-	std::unique_ptr<ExpressionNode> initializer;
+	std::shared_ptr<ExpressionNode> initializer;
 };

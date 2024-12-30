@@ -9,7 +9,7 @@ void FunctionCallExpr::setName(const std::string& name)
 	this->functionName = name;
 }
 
-void FunctionCallExpr::addArgument(std::unique_ptr<ExpressionNode> arg)
+void FunctionCallExpr::addArgument(std::shared_ptr<ExpressionNode> arg)
 {
 	arguments.push_back(std::move(arg));
 }

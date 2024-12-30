@@ -9,10 +9,13 @@ class ProgramNode : public Node
 public:
 	ProgramNode(int lineNumber);
 
-	void addFunction(std::unique_ptr<FunctionNode> function);
-	void addStatement(std::unique_ptr<StatementNode> statement);
+	void addFunction(std::shared_ptr<FunctionNode> function);
+	void addStatement(std::shared_ptr<StatementNode> statement);
+
+	std::vector<std::shared_ptr<FunctionNode>> getFunctions() const;
+	std::vector<std::shared_ptr<StatementNode>> getStatements() const;
 
 private:
-	std::vector<std::unique_ptr<FunctionNode>> functions;
-	std::vector<std::unique_ptr<StatementNode>> statements;
+	std::vector<std::shared_ptr<FunctionNode>> functions;
+	std::vector<std::shared_ptr<StatementNode>> statements;
 };

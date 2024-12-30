@@ -10,9 +10,9 @@ public:
 	// Function to add a statement
 	// Inputs: new statement
 	// Outputs: none
-	void addStatement(std::unique_ptr<StatementNode> statement);
+	void addStatement(std::shared_ptr<StatementNode> statement);
 
 private:
-	std::vector<std::unique_ptr<StatementNode>> statements;
+	std::vector<std::shared_ptr<StatementNode>> statements;
 
 };

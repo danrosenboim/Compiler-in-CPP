@@ -14,7 +14,7 @@ void DeclarationStatementNode::setIdentifier(std::string id)
 	this->identifier = id;
 }
 
-void DeclarationStatementNode::setInitializer(std::unique_ptr<ExpressionNode> expression)
+void DeclarationStatementNode::setInitializer(std::shared_ptr<ExpressionNode> expression)
 {
 	this->initializer = std::move(expression);
 }

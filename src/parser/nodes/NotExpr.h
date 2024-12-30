@@ -6,9 +6,9 @@ class NotExpr : public ExpressionNode
 public:
     NotExpr(int lineNumber);
 
-    void setExpression(std::unique_ptr<ExpressionNode> expression);
+    void setExpression(std::shared_ptr<ExpressionNode> expression);
 
 private:
-    std::unique_ptr<ExpressionNode> expression;
+    std::shared_ptr<ExpressionNode> expression;
 };
 

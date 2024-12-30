@@ -91,24 +91,24 @@ private:
 	std::string parseIdentifier();
 
 	// Parse functions that return a node
-	std::unique_ptr<FunctionNode> parseFunction();
-	std::vector<std::unique_ptr<ParameterNode>> parseParameters();
-	std::unique_ptr<ParameterNode> parseParameter();
-	std::unique_ptr<BlockNode> parseBlock();
-	std::unique_ptr<StatementNode> parseStatement();
+	std::shared_ptr<FunctionNode> parseFunction();
+	std::vector<std::shared_ptr<ParameterNode>> parseParameters();
+	std::shared_ptr<ParameterNode> parseParameter();
+	std::shared_ptr<BlockNode> parseBlock();
+	std::shared_ptr<StatementNode> parseStatement();
 	
 	// Parse statement functions
-	std::unique_ptr<ForStatementNode> parseForStatement();
-	std::unique_ptr<IfStatementNode> parseIfStatement();
-	std::unique_ptr<ReturnStatementNode> parseReturnStatement();
-	std::unique_ptr<OutStatementNode> parseOutStatement();
-	std::unique_ptr<InStatementNode> parseInStatement();
-	std::unique_ptr<DeclarationStatementNode> parseDeclarationStatement();
-	std::unique_ptr<AssignmentStatementNode> parseAssignmentStatement();
+	std::shared_ptr<ForStatementNode> parseForStatement();
+	std::shared_ptr<IfStatementNode> parseIfStatement();
+	std::shared_ptr<ReturnStatementNode> parseReturnStatement();
+	std::shared_ptr<OutStatementNode> parseOutStatement();
+	std::shared_ptr<InStatementNode> parseInStatement();
+	std::shared_ptr<DeclarationStatementNode> parseDeclarationStatement();
+	std::shared_ptr<AssignmentStatementNode> parseAssignmentStatement();
 
 	// Parse expression functions
-	std::unique_ptr<ExpressionNode> parseExpression();
-	std::unique_ptr<ExpressionNode> parseTerm1();
-	std::unique_ptr<ExpressionNode> parseTerm2();
-	std::unique_ptr<ExpressionNode> parseFactor();
+	std::shared_ptr<ExpressionNode> parseExpression();
+	std::shared_ptr<ExpressionNode> parseTerm1();
+	std::shared_ptr<ExpressionNode> parseTerm2();
+	std::shared_ptr<ExpressionNode> parseFactor();
 };

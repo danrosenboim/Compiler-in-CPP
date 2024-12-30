@@ -8,10 +8,10 @@ public:
 
     void setName(const std::string& name);
 
-    void addArgument(std::unique_ptr<ExpressionNode> arg);
+    void addArgument(std::shared_ptr<ExpressionNode> arg);
 private:
 
     std::string functionName;
-    std::vector<std::unique_ptr<ExpressionNode>> arguments;
+    std::vector<std::shared_ptr<ExpressionNode>> arguments;
 
 };

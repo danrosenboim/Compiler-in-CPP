@@ -12,13 +12,19 @@ public:
 	// Set functions for all the variables
 	void setReturnType(TypeKind returnType);
 	void setName(const std::string& functionName);
-	void setParameters(std::vector<std::unique_ptr<ParameterNode>>& parameters);
-	void setBody(std::unique_ptr<BlockNode> body);
+	void setParameters(std::vector<std::shared_ptr<ParameterNode>>& parameters);
+	void setBody(std::shared_ptr<BlockNode> body);
+
+	// Getters
+	TypeKind getReturnType() const;
+	std::string getName() const;
+	std::vector<std::shared_ptr<ParameterNode>> getParameters() const;
+	std::shared_ptr<BlockNode> getBody() const;
 
 
 private:
 	TypeKind returnType;
 	std::string name;
-	std::vector<std::unique_ptr<ParameterNode>> parameters;
-	std::unique_ptr<BlockNode> body;
+	std::vector<std::shared_ptr<ParameterNode>> parameters;
+	std::shared_ptr<BlockNode> body;
 };

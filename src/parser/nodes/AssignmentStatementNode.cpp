@@ -10,7 +10,7 @@ void AssignmentStatementNode::setIdentifier(std::string id)
 	this->identifier = id;
 }
 
-void AssignmentStatementNode::setExpression(std::unique_ptr<ExpressionNode> expression)
+void AssignmentStatementNode::setExpression(std::shared_ptr<ExpressionNode> expression)
 {
 	this->expression = std::move(expression);
 }

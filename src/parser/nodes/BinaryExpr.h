@@ -8,11 +8,11 @@ public:
 	BinaryExpr(int lineNumber);
 
 	void setType(ExpressionType type);
-	void setLeft(std::unique_ptr<ExpressionNode> left);
-	void setRight(std::unique_ptr<ExpressionNode> right);
+	void setLeft(std::shared_ptr<ExpressionNode> left);
+	void setRight(std::shared_ptr<ExpressionNode> right);
 
 private:
 	ExpressionType type;
-	std::unique_ptr<ExpressionNode> left;
-	std::unique_ptr<ExpressionNode> right;
+	std::shared_ptr<ExpressionNode> left;
+	std::shared_ptr<ExpressionNode> right;
 };

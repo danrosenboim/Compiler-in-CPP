@@ -3,14 +3,13 @@
 SymbolTable::SymbolTable() : ordinalPos(0)
 {
 	// First element for global scope
-	symbolTableStack.resize(1);
+	symbolTableStack.emplace_back();
 }
 
 void SymbolTable::enterScope()
 {
 	++ordinalPos;
-	// Resize the vector, so it will initialize the needed maps
-	symbolTableStack.resize(ordinalPos + 1);
+	symbolTableStack.emplace_back();
 }
 
 void SymbolTable::exitScope()
@@ -28,13 +27,13 @@ int SymbolTable::getScopeLevel() const
 
 void SymbolTable::addEntryToLatest(const Symbol& symbol)
 {
-	symbolTableStack.back()[symbol.varName] = std::make_unique<Symbol>(symbol);
+	symbolTableStack.back()[symbol.varName] = std::make_shared<Symbol>(symbol);
 }
 
 Symbol* SymbolTable::tableLookup(const std::string& name) const
 {
 	// Loop through the vector backwards
-	for(auto elem = symbolTableStack.rbegin(); it != symbolTableStack.rend(); ++it)
+	for(auto elem = symbolTableStack.rbegin(); elem != symbolTableStack.rend(); ++elem)
 	{
 		auto it = elem->find(name);
 		if(it != elem->end())

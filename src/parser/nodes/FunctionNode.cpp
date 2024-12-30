@@ -8,17 +8,14 @@ void FunctionNode::setReturnType(TypeKind returnType)
 	this->returnType = returnType;
 }
 
-void FunctionNode::setName(std::string functionName)
+void FunctionNode::setName(const std::string& functionName)
 {
 	name = functionName;
 }
 
-void FunctionNode::setParameters(std::vector<std::unique_ptr<ParameterNode>> parameters)
+void FunctionNode::setParameters(std::vector<std::unique_ptr<ParameterNode>>& parameters)
 {
-	for (auto& i : parameters)
-	{
-		parameters.push_back(std::move(i));
-	}
+	this->parameters.swap(parameters);
 }
 
 void FunctionNode::setBody(std::unique_ptr<BlockNode> body)

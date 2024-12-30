@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include "../parser/nodes/TypeKind.h"
 #include "Symbol.h"
 
 class SymbolTable
@@ -54,7 +55,7 @@ public:
 private:
 	// Using a stack to express all the blocks, the latest item in the stack is the
 	// latest block with all of the variables defined in it
-	std::vector<std::unordered_map<std::string, std::unique_ptr<Symbol>>> symbolTableStack;
+	std::vector<std::unordered_map<std::string, std::shared_ptr<Symbol>>> symbolTableStack;
 
 	// The number of scopes entered, 0 being GLOBAL
 	int ordinalPos;

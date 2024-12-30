@@ -11,8 +11,8 @@ public:
 
 	// Set functions for all the variables
 	void setReturnType(TypeKind returnType);
-	void setName(std::string functionName);
-	void setParameters(std::vector<std::unique_ptr<ParameterNode>> parameters);
+	void setName(const std::string& functionName);
+	void setParameters(std::vector<std::unique_ptr<ParameterNode>>& parameters);
 	void setBody(std::unique_ptr<BlockNode> body);
 
 

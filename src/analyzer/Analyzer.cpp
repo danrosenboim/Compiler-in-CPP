@@ -1,6 +1,8 @@
 #include "Analyzer.h"
 
-Analyzer::Analyzer();
+Analyzer::Analyzer()
+{
+}
 
 bool Analyzer::canConvert(TypeKind from, TypeKind to)
 {

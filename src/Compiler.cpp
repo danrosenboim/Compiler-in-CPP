@@ -6,6 +6,14 @@ Compiler::Compiler(const std::string& filePath) : m_filePath(filePath), scanner(
 
 void Compiler::run()
 {
-	parser->parseProgram();
+	// Error handling
+	try
+	{
+		parser->parseProgram();
+	}
+	catch (const CompilerException& e)
+	{
+		std::cout << e.what() << std::endl;
+	}
 }
 

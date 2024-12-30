@@ -2,6 +2,7 @@
 #include "../lexer/Lexer.h"
 #include "../exceptions/parser/ParserUnexpected.h"
 #include "nodes/AssignmentStatementNode.h"
+#include "nodes/DeclarationStatementNode.h"
 #include "nodes/BinaryExpr.h"
 #include "nodes/BlockNode.h"
 #include "nodes/ExpressionNode.h"
@@ -102,6 +103,7 @@ private:
 	std::unique_ptr<ReturnStatementNode> parseReturnStatement();
 	std::unique_ptr<OutStatementNode> parseOutStatement();
 	std::unique_ptr<InStatementNode> parseInStatement();
+	std::unique_ptr<DeclarationStatementNode> parseDeclarationStatement();
 	std::unique_ptr<AssignmentStatementNode> parseAssignmentStatement();
 
 	// Parse expression functions

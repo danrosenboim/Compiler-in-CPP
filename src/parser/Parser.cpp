@@ -96,6 +96,7 @@ std::unique_ptr<FunctionNode> Parser::parseFunction()
 	
 	// Type
 	functionNode->setReturnType(parseType());
+	advance();
 
 	// Identifier
 	functionNode->setName(parseIdentifier());
@@ -104,11 +105,12 @@ std::unique_ptr<FunctionNode> Parser::parseFunction()
 
 	if(currentToken.getTag() != TokenType::RIGHT_PAREN)
 	{
-		functionNode->setParameters(parseParameters());
+		std::vector<std::unique_ptr<ParameterNode>> parameters = parseParameters();
+		functionNode->setParameters(parameters);
 	}
 
 	// Right paren
-	advance();
+	expect(TokenType::RIGHT_PAREN);
 
 	functionNode->setBody(parseBlock());
 
@@ -147,6 +149,9 @@ std::vector<std::unique_ptr<ParameterNode>> Parser::parseParameters()
 {
 	std::vector<std::unique_ptr<ParameterNode>> parametersVector;
 
+	// Initial parameter
+	parametersVector.push_back(parseParameter());
+
 	while(currentToken.getTag() == TokenType::COMMA)
 	{
 		advance();
@@ -162,6 +167,7 @@ std::unique_ptr<ParameterNode> Parser::parseParameter()
 	auto paramNode = std::make_unique<ParameterNode>(currentToken.getLineNumber());
 
 	paramNode->setType(parseType());
+	advance();
 	paramNode->setIdentifier(parseIdentifier());
 
 	return paramNode;
@@ -186,7 +192,7 @@ std::unique_ptr<BlockNode> Parser::parseBlock()
 }
 
 
-// Statement -> ForStmt | IfStmt | ReturnStmt | OutStmt | InStmt | AssignmentStmt
+// Statement -> ForStmt | IfStmt | ReturnStmt | OutStmt | InStmt | DeclarationStmt | AssignmentStmt
 std::unique_ptr<StatementNode> Parser::parseStatement()
 {
 	switch(currentToken.getTag())
@@ -196,6 +202,11 @@ std::unique_ptr<StatementNode> Parser::parseStatement()
 	case TokenType::RETURN: return parseReturnStatement();
 	case TokenType::OUT: return parseOutStatement();
 	case TokenType::IN: return parseInStatement();
+	// Declaration or assignment
+	case TokenType::INT:
+	case TokenType::BOOL:
+	case TokenType::STRING:
+	case TokenType::FLOAT: return parseDeclarationStatement();
 	default: return parseAssignmentStatement();
 	}
 }
@@ -288,6 +299,29 @@ std::unique_ptr<InStatementNode> Parser::parseInStatement()
 	expect(TokenType::SEMICOLON);
 
 	return inStatement;
+}
+
+// DeclarationStmt -> type IDENTIFIER ("=" Expression)? ";"
+std::unique_ptr<DeclarationStatementNode> Parser::parseDeclarationStatement()
+{
+	auto declarationNode = std::make_unique<DeclarationStatementNode>(currentToken.getLineNumber());
+
+	// Get the type and advance
+	declarationNode->setType(parseType());
+	advance();
+
+	// Get the identifier
+	declarationNode->setIdentifier(parseIdentifier());
+
+	// Check for initialization
+	if (currentToken.getTag() == TokenType::EQUAL)
+	{
+		advance();
+		declarationNode->setInitializer(parseExpression());
+	}
+
+	expect(TokenType::SEMICOLON);
+	return declarationNode;
 }
 
 // AssignmentStmt -> IDENTIFIER "=" Expression ";"
@@ -388,8 +422,12 @@ std::unique_ptr<ExpressionNode> Parser::parseTerm2()
 std::unique_ptr<ExpressionNode> Parser::parseFactor()
 {
 	std::unique_ptr<ExpressionNode> expr = nullptr;
-	std::unique_ptr<NotExpr> notExpr = nullptr;
 	std::unique_ptr<FunctionCallExpr> funcCall = nullptr;
+	std::unique_ptr<NotExpr> notExpr = nullptr;
+	std::unique_ptr<NumberExpr> numExpr = nullptr;
+	std::unique_ptr<StringExpr> strExpr = nullptr;
+	std::unique_ptr<BoolExpr> boolExpr = nullptr;
+	std::unique_ptr<RealExpr> realExpr = nullptr;
 	std::string name = "";
 
 
@@ -405,17 +443,21 @@ std::unique_ptr<ExpressionNode> Parser::parseFactor()
 		
 	// Incase of a literal advance and return
 	case TokenType::NUMBER:
+		numExpr = std::make_unique<NumberExpr>(currentToken.getLineNumber(), currentToken.getNumber());
 		advance();
-		return std::make_unique<NumberExpr>(currentToken.getLineNumber(), currentToken.getNumber());
+		return numExpr;
 	case TokenType::TEXT:
+		strExpr = std::make_unique<StringExpr>(currentToken.getLineNumber(), currentToken.getLexeme());
 		advance();
-		return std::make_unique<StringExpr>(currentToken.getLineNumber(), currentToken.getLexeme());
+		return strExpr;
 	case TokenType::BOOL:
+		boolExpr = std::make_unique<BoolExpr>(currentToken.getLineNumber(), currentToken.getBool());
 		advance();
-		return std::make_unique<BoolExpr>(currentToken.getLineNumber(), currentToken.getBool());
+		return boolExpr;
 	case TokenType::REAL:
+		realExpr = std::make_unique<RealExpr>(currentToken.getLineNumber(), currentToken.getReal());
 		advance();
-		return std::make_unique<RealExpr>(currentToken.getLineNumber(), currentToken.getReal());
+		return realExpr;
 	
 	case TokenType::IDENTIFIER:
 		name = currentToken.getLexeme();

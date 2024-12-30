@@ -1,7 +1,10 @@
 #include "SymbolTable.h"
 
 SymbolTable::SymbolTable() : ordinalPos(0)
-{}
+{
+	// First element for global scope
+	symbolTableStack.resize(1);
+}
 
 void SymbolTable::enterScope()
 {
@@ -31,12 +34,12 @@ void SymbolTable::addEntryToLatest(const Symbol& symbol)
 Symbol* SymbolTable::tableLookup(const std::string& name) const
 {
 	// Loop through the vector backwards
-	for(auto elem = symbolTableStack.rbegin(); it != stack.rend(); ++it)
+	for(auto elem = symbolTableStack.rbegin(); it != symbolTableStack.rend(); ++it)
 	{
 		auto it = elem->find(name);
 		if(it != elem->end())
 		{
-			return it.second.get();
+			return it->second.get();
 		}
 	}
 	return nullptr;
@@ -47,7 +50,7 @@ Symbol* SymbolTable::currentScopeLookup(const std::string& name) const
 	auto it = symbolTableStack.back().find(name);
 	if(it != symbolTableStack.back().end())
 	{
-		return it.second.get();
+		return it->second.get();
 	}
 
 	return nullptr;

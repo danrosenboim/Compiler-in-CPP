@@ -2,6 +2,7 @@
 #include <string>
 #include "lexer/Lexer.h"
 #include "parser/Parser.h"
+#include "analyzer/Analyzer.h"
 
 
 class Compiler
@@ -17,4 +18,5 @@ private:
 	// Compiler parts
 	std::shared_ptr<Lexer> scanner;
 	std::unique_ptr<Parser> parser;
+	std::unique_ptr<Analyzer> analyzer;
 };

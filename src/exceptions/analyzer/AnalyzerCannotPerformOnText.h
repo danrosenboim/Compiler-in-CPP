@@ -1,7 +1,7 @@
 #pragma once
 #include "AnalyzerException.h"
 
-class AnalyzerCannotPerformOnText : AnalyzerException
+class AnalyzerCannotPerformOnText : public AnalyzerException
 {
 public:
 	AnalyzerCannotPerformOnText(int lineNumber);

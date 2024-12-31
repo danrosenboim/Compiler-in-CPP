@@ -1,13 +1,13 @@
 #include "Analyzer.h"
 
-Analyzer::Analyzer() : currentFunctionReturnType(TypeKind::NUM)
+Analyzer::Analyzer() : currentFunctionReturnType(TypeKind::NUM), symbolTable(std::make_unique<SymbolTable>())
 {
 }
 
 void Analyzer::analyze(std::unique_ptr<ProgramNode> programNode)
 {
 	// Loop through all the function declarations and add them
-	for (const auto& func : programNode->getFunctions())
+	for (auto& func : programNode->getFunctions())
 	{
 		registerFunction(func);
 	}
@@ -224,24 +224,21 @@ void Analyzer::analyzeFor(std::shared_ptr<ForStatementNode> forNode)
 {
 	symbolTable->enterScope();
 
-	// Check if the loop variable exists and get its type
-	std::shared_ptr<Symbol> varSymbol = symbolTable->tableLookup(forNode->getVariableName());
-	if (varSymbol == nullptr)
-	{
-		throw AnalyzerUndefinedVariable(forNode->getVariableName(), forNode->getLineNumber());
-	}
+	// Create iteration variable
+	Symbol iterationVar(SymbolType::LOCAL, TypeKind::NUM, forNode->getVariableName(), symbolTable->getScopeLevel());
+	symbolTable->addEntryToLatest(iterationVar);
 
 	// Analyze initialization expression
 	TypeKind initType = analyzeExpression(forNode->getInitExpr());
-	if (!canConvert(initType, varSymbol->varType))
+	if (!canConvert(initType, iterationVar.varType))
 	{
-		throw AnalyzerCannotConvert(typeKindToString(initType), typeKindToString(varSymbol->varType), forNode->getLineNumber());
+		throw AnalyzerCannotConvert(typeKindToString(initType), typeKindToString(iterationVar.varType), forNode->getLineNumber());
 	}
 
 	// Mark for conversion if needed
-	if (initType != varSymbol->varType)
+	if (initType != iterationVar.varType)
 	{
-		forNode->getInitExpr()->markForConversion(varSymbol->varType);
+		forNode->getInitExpr()->markForConversion(iterationVar.varType);
 	}
 
 	TypeKind condType = analyzeExpression(forNode->getCondition());

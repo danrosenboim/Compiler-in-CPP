@@ -10,7 +10,5 @@ int main()
 
 	compiler.run();
 
-	std::cout << "Compiler ran successfully" << std::endl;
-
 	return 0;
 }

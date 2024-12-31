@@ -11,6 +11,9 @@ public:
 	void setType(TypeKind type);
 	void setIdentifier(std::string identifier);
 
+	TypeKind getType() const;
+	std::string getIdentifier() const;
+
 private:
 	TypeKind type;
 	std::string identifier;

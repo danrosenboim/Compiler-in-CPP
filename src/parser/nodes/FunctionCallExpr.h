@@ -6,12 +6,21 @@ class FunctionCallExpr : public ExpressionNode
 public:
     FunctionCallExpr(int lineNumber);
 
+    // Setters
     void setName(const std::string& name);
 
-    void addArgument(std::unique_ptr<ExpressionNode> arg);
+    // Getters
+    std::string getName() const;
+    std::vector<std::shared_ptr<ExpressionNode>> getArguments() const;
+
+    // Function to add an argument to the arguments vector
+    void addArgument(std::shared_ptr<ExpressionNode> arg);
+
+    // Expression variant
+    virtual ExpressionType getExpressionVariant() const override;
 private:
 
     std::string functionName;
-    std::vector<std::unique_ptr<ExpressionNode>> arguments;
+    std::vector<std::shared_ptr<ExpressionNode>> arguments;
 
 };

@@ -1,18 +1,27 @@
 #pragma once
 #include "ExpressionNode.h"
-#include "ExpressionType.h"
+#include "BinaryExprType.h"
 
 class BinaryExpr : public ExpressionNode
 {
 public:
 	BinaryExpr(int lineNumber);
 
-	void setType(ExpressionType type);
-	void setLeft(std::unique_ptr<ExpressionNode> left);
-	void setRight(std::unique_ptr<ExpressionNode> right);
+	// Setters
+	void setType(BinaryExprType type);
+	void setLeft(std::shared_ptr<ExpressionNode> left);
+	void setRight(std::shared_ptr<ExpressionNode> right);
+
+	// Getters
+	BinaryExprType getType() const;
+	std::shared_ptr<ExpressionNode> getLeft() const;
+	std::shared_ptr<ExpressionNode> getRight() const;
+
+	// Expression variant
+	virtual ExpressionType getExpressionVariant() const override;
 
 private:
-	ExpressionType type;
-	std::unique_ptr<ExpressionNode> left;
-	std::unique_ptr<ExpressionNode> right;
+	BinaryExprType type;
+	std::shared_ptr<ExpressionNode> left;
+	std::shared_ptr<ExpressionNode> right;
 };

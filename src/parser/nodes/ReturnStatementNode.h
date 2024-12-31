@@ -7,8 +7,15 @@ class ReturnStatementNode : public StatementNode
 public:
 	ReturnStatementNode(int lineNumber);
 
-	void setExpression(std::unique_ptr<ExpressionNode> expression);
+	// Setter
+	void setExpression(std::shared_ptr<ExpressionNode> expression);
+
+	// Getter
+	std::shared_ptr<ExpressionNode> getExpression() const;
+
+	// StatementType
+	virtual StatementType getStatementType() const override;
 
 private:
-	std::unique_ptr<ExpressionNode> expression;
+	std::shared_ptr<ExpressionNode> expression;
 };

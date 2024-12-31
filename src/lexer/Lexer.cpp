@@ -174,6 +174,7 @@ Token Lexer::numberToken()
 
 Token Lexer::realToken()
 {
+	advance();
 	while(std::isdigit(*m_forward))
 	{
 		advance();
@@ -184,7 +185,7 @@ Token Lexer::realToken()
 	}
 	
 	// Make sure the float is in float limits
-	std::string currentNumber = m_previous + std::string(m_lexemeBegin, m_lexemeBegin - m_forward - 1);
+	std::string currentNumber = m_previous + std::string(m_lexemeBegin, m_forward - m_lexemeBegin);
 	double temp = std::stod(currentNumber);
 
 	if(temp > std::numeric_limits<float>::max() || temp < std::numeric_limits<float>::lowest())

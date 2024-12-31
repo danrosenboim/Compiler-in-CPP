@@ -1,6 +1,6 @@
 #include "Analyzer.h"
 
-Analyzer::Analyzer() : currentFunctionReturnType(TypeKind::NUM), symbolTable(std::make_unique<SymbolTable>())
+Analyzer::Analyzer() : symbolTable(std::make_unique<SymbolTable>()), currentFunctionReturnType(TypeKind::NUM)
 {
 }
 
@@ -71,7 +71,7 @@ TypeKind Analyzer::convertBinaryOperation(TypeKind type1, TypeKind type2, std::s
 	}
 
 	// Error in code
-	throw std::exception("Real compiler error");
+	throw CompilerException("Real compiler error", 0);
 }
 
 std::string Analyzer::typeKindToString(TypeKind type)
@@ -161,7 +161,7 @@ void Analyzer::analyzeStatement(std::shared_ptr<StatementNode> statement)
 	case StatementType::ERROR:
 	default:
 		// If it reaches here its an error in the compiler
-		throw std::exception("Real compiler error");
+		throw CompilerException("Real compiler error", 0);
 	}
 }
 
@@ -350,7 +350,7 @@ TypeKind Analyzer::analyzeExpression(std::shared_ptr<ExpressionNode> expression)
 	case ExpressionType::ERROR:
 	default:
 		// If it reaches here its an error in the compiler
-		throw std::exception("Real compiler error");
+		throw CompilerException("Real compiler error", 0);
 	}
 
 	expression->setCurrentType(resultType);
@@ -414,7 +414,7 @@ TypeKind Analyzer::analyzeBinaryExpression(std::shared_ptr<BinaryExpr> expressio
 
 	default:
 		// If it reaches here its an error in the compiler
-		throw std::exception("Real compiler error");
+		throw CompilerException("Real compiler error", 0);
 	}
 
 }

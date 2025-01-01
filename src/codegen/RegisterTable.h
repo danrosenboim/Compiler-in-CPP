@@ -20,7 +20,7 @@ public:
 	 * Inputs: register to mark
 	 * Outputs: none
 	 * */
-	void regiserFree(std::string reg);
+	void registerFree(std::string reg);
 
 private:
 	// Map that will contain all the registers that the assembly code could use

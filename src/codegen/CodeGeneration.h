@@ -3,6 +3,22 @@
 #include <fstream>
 #include "RegisterTable.h"
 #include "../parser/nodes/ProgramNode.h"
+#include "../parser/nodes/AssignmentStatementNode.h"
+#include "../parser/nodes/BinaryExpr.h"
+#include "../parser/nodes/NumberExpr.h"
+#include "../parser/nodes/RealExpr.h"
+#include "../parser/nodes/StringExpr.h"
+#include "../parser/nodes/BoolExpr.h"
+#include "../parser/nodes/NotExpr.h"
+#include "../parser/nodes/IdentifierExpr.h"
+#include "../parser/nodes/FunctionCallExpr.h"
+#include "../parser/nodes/DeclarationStatementNode.h"
+#include "../parser/nodes/ForStatementNode.h"
+#include "../parser/nodes/InStatementNode.h"
+#include "../parser/nodes/OutStatementNode.h"
+#include "../parser/nodes/FunctionNode.h"
+#include "../parser/nodes/ReturnStatementNode.h"
+#include "../exceptions/CompilerException.h"
 
 class CodeGeneration
 {
@@ -18,10 +34,13 @@ public:
 
 private:
 	// Stores the output file stream
-	std::ifstream outputFile;
+	std::ofstream outputFile;
 
 	// This variable will keep track of the temporary labels that we generate
 	int labels;
+
+	// Keeps track of available registers
+	RegisterTable regTable;
 
 	/* Function that writes info to a file*/
 	void emit(const std::string& data);
@@ -32,4 +51,13 @@ private:
 	 * Outputs: new label
 	 * */
 	std::string createLabel();
+
+	// Generating functions for each item
+	void generateFunction(std::shared_ptr<FunctionNode> func);
+	void generateStatement(std::shared_ptr<StatementNode> statement);
+
+	void generateDeclaration(std::shared_ptr<DeclarationStatementNode> decl);
+
+	// Expression Generation Functions
+	std::string generateExpression(std::shared_ptr<ExpressionNode> expr);
 };

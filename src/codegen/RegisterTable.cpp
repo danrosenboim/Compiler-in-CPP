@@ -2,7 +2,7 @@
 
 RegisterTable::RegisterTable()
 {
-	addRegister();
+	addRegisters();
 }
 
 std::string RegisterTable::registerAllocate()
@@ -15,7 +15,18 @@ std::string RegisterTable::registerAllocate()
 		throw std::exception();
 	}
 
-	return reg;
+	return reg->first;
+}
+
+void RegisterTable::registerFree(std::string reg)
+{
+	auto it = scratchRegisters.find(reg);
+	if (it == scratchRegisters.end())
+	{
+		throw std::exception();
+	}
+	
+	it->second = false;
 }
 
 void RegisterTable::addRegisters()

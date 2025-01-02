@@ -6,18 +6,13 @@ CodeGeneration::CodeGeneration(const std::string& outputPath) : outputFile(outpu
 	{
 		throw CompilerException("Could not open output file", 0);
 	}
+
+	emit(".file " + outputPath);
+	emit(".text");
 }
 
 void CodeGeneration::generate(std::unique_ptr<ProgramNode> head)
 {
-	emit(".text");
-
-	// Static allocator
-	emit(".globl malloc_ptr");
-	emit(".data");
-	emit("malloc_ptr: .quad heap_start");
-	emit(".bss");
-	emit(".lcomm heap_start, 1000000"); // 1MB heap
 
 	emit(".text");
 	for (const auto& func : head->getFunctions())

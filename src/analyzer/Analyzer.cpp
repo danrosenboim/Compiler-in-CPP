@@ -6,6 +6,8 @@ Analyzer::Analyzer() : symbolTable(std::make_unique<SymbolTable>()), currentFunc
 
 void Analyzer::analyze(std::unique_ptr<ProgramNode> programNode)
 {
+	symbolTable->enterScope();
+
 	// Loop through all the function declarations and add them
 	for (auto& func : programNode->getFunctions())
 	{
@@ -22,6 +24,15 @@ void Analyzer::analyze(std::unique_ptr<ProgramNode> programNode)
 	for (auto& statement : programNode->getStatements())
 	{
 		analyzeStatement(statement);
+	}
+
+	// Add global declarations to program node
+	for (const auto& declaration : symbolTable->exitScope())
+	{
+		if (declaration.second->declarationNode != nullptr)
+		{
+			programNode->addDeclaration(declaration.second);
+		}
 	}
 }
 
@@ -112,23 +123,26 @@ void Analyzer::analyzeFunction(std::shared_ptr<FunctionNode> func)
 	// Register parameters
 	for (const auto& param : func->getParameters())
 	{
-		Symbol paramSymbol(SymbolType::PARAM, param->getType(), param->getIdentifier(), symbolTable->getScopeLevel());
+		Symbol paramSymbol(SymbolType::PARAM, param->getType(), param->getIdentifier(), symbolTable->getLatestSize() + 1);
 		symbolTable->addEntryToLatest(paramSymbol);
 	}
 
 	// Loop through the statements and analyze them
 	analyzeBlock(func->getBody());
-
-	symbolTable->exitScope();
 }
 
 void Analyzer::analyzeBlock(std::shared_ptr<BlockNode> block)
 {
-
 	// Loop through the statements and analyze them
 	for (auto& stmt : block->getStatements())
 	{
 		analyzeStatement(stmt);
+	}
+
+	// Adding all the symbols to the block
+	for (const auto& dcl : symbolTable->exitScope())
+	{
+		block->addDeclaration(dcl.second);
 	}
 }
 
@@ -200,7 +214,8 @@ void Analyzer::analyzeDeclaration(std::shared_ptr<DeclarationStatementNode> decl
 
 	// Add to symbol table
 	Symbol varSymbol((symbolTable->getScopeLevel() == 0) ? SymbolType::GLOBAL : SymbolType::LOCAL, declaration->getType(),
-		declaration->getIdentifier(), symbolTable->getScopeLevel());
+		declaration->getIdentifier(), symbolTable->getLatestSize() + 1);
+	varSymbol.declarationNode = declaration;
 
 	symbolTable->addEntryToLatest(varSymbol);
 

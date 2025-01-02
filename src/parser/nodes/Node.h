@@ -7,6 +7,7 @@
 class ExpressionNode;
 class StatementNode;
 class ParameterNode;
+class Symbol;
 
 // This class will be used as a node for the AST
 class Node

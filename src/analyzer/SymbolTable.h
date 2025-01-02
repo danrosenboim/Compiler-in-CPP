@@ -21,9 +21,9 @@ public:
 	/*
 	Pops the latest map off of the symbol table stack
 	Inputs: none
-	Outputs: none
+	Outputs: returns the last map that was popped
 	*/
-	void exitScope();
+	std::unordered_map<std::string, std::shared_ptr<Symbol>> exitScope();
 
 	/*
 	Gets the currennt ordinal position
@@ -49,8 +49,17 @@ public:
 	/*
 	Looksup in the current scope, this function will help us find redefinitions of the same variable
 	Input: name of the variable to search for
-	Outputs: returns the symbol if found*/
+	Outputs: returns the symbol if found
+	*/
 	std::shared_ptr<Symbol> currentScopeLookup(const std::string& name) const;
+
+	/*
+	Function to get the latest maps' size only considering the declaration, this will be used for ordinal position
+	Inputs: none
+	Outputs: size of the last map in the stack only considering the declaration
+	*/
+	int getLatestSize() const;
+
 
 private:
 	// Using a stack to express all the blocks, the latest item in the stack is the
@@ -58,6 +67,6 @@ private:
 	std::vector<std::unordered_map<std::string, std::shared_ptr<Symbol>>> symbolTableStack;
 
 	// The number of scopes entered, 0 being GLOBAL
-	int ordinalPos;
+	int scopesEntered;
 };
 

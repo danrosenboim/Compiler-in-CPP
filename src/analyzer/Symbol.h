@@ -20,5 +20,6 @@ struct Symbol
 	std::string varName;
 	int ordinalPos;
 	std::shared_ptr<FunctionNode> functionNode;
+	std::shared_ptr<DeclarationStatementNode> declarationNode;
 
 };

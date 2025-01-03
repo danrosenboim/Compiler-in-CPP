@@ -7,17 +7,23 @@ CodeGeneration::CodeGeneration(const std::string& outputPath) : outputFile(outpu
 		throw CompilerException("Could not open output file", 0);
 	}
 
-	emit(".file " + outputPath);
+	emit(".file \"" + outputPath.substr(outputPath.find('/') + 1, outputPath.size() - outputPath.find('/') + 1) + "\"");
 	emit(".text");
 }
 
 void CodeGeneration::generate(std::unique_ptr<ProgramNode> head)
 {
 
+	emit(".bss");
+	for (const auto& decl : head->getDeclarations())
+	{
+		generateGlobal(decl);
+	}
+
 	emit(".text");
 	for (const auto& func : head->getFunctions())
 	{
-		generateFunction(func);
+		//generateFunction(func);
 	}
 
 	emit(".globl main");
@@ -45,16 +51,59 @@ std::string CodeGeneration::createLabel()
 	return ".L" + std::to_string(++labels);
 }
 
-void CodeGeneration::generateFunction(std::shared_ptr<FunctionNode> func)
+uint32_t CodeGeneration::floatToIEEE(float value)
 {
+    // Using a union to access the float's bits directly
+    union {
+        float f;
+        uint32_t i;
+    } converter;
 
+    // Store the float in the union
+    converter.f = value;
+
+    // Return the value interpreted as an int
+    return converter.i;
 }
+
+void CodeGeneration::generateGlobal(std::shared_ptr<Symbol> symbol)
+{
+	emit(".global " + symbol->varName);
+	emit(".bss");
+	
+	// Generate different variables, depending on the declaration type
+	switch (symbol->varType)
+	{
+	case TypeKind::NUM:
+	case TypeKind::REAL:
+		emit(".align 4");
+		emit(".type " + symbol->varName + ", @object");
+		emit(".size " + symbol->varName + ", 4");
+		emit(symbol->varName + ":");
+		emit(".zero 4");
+		break;
+	case TypeKind::BOOL:
+		emit(".type " + symbol->varName + ", @object");
+		emit(".size " + symbol->varName + ", 1");
+		emit(symbol->varName + ":");
+		emit(".zero 1");
+		break;
+	default:
+		std::cout << "Not implemented yet" << std::endl;
+	}
+}
+
+//void CodeGeneration::generateFunction(std::shared_ptr<FunctionNode> func)
+//{
+//
+//}
 
 void CodeGeneration::generateStatement(std::shared_ptr<StatementNode> statement)
 {
 	switch (statement->getStatementType())
 	{
 	case StatementType::DECLARATION:
+		generateDeclaration(std::dynamic_pointer_cast<DeclarationStatementNode>(statement));
 
 	default:
 	}
@@ -64,141 +113,282 @@ void CodeGeneration::generateDeclaration(std::shared_ptr<DeclarationStatementNod
 {
 	if (decl->getInitializer())
 	{
-		std::string result = generateExpression(decl->getInitializer());
-		//emit("movq " + result + ", " + std::to_string(getOffset(decl->getIdentifier())) + "(%rbp)");
-		regTable.registerFree(result);
+		std::string resultReg = generateExpression(decl->getInitializer());
+		//emit("movq " + resultReg + ", " + std::to_string(getOffset(decl->getIdentifier())) + "(%rbp)");
+		regTable.registerFree(resultReg);
 	}
 }
 
 std::string CodeGeneration::generateExpression(std::shared_ptr<ExpressionNode> expr)
 {
-    std::string reg = regTable.registerAllocate();
+    std::string reg = "";
+    std::string reg2 = "";
+    switch (expr->getExpressionVariant())
+    {
+    case ExpressionType::NUMBER:
+        reg = regTable.registerAllocate();
+        emit("movl $" + std::to_string(std::dynamic_pointer_cast<NumberExpr>(expr)->getValue()) + ", " + reg);
+        break;
 
-    switch (expr->getExpressionVariant()) {
-    case ExpressionType::NUMBER: {
-        auto numExpr = std::dynamic_pointer_cast<NumberExpr>(expr);
-        emit("movq $" + std::to_string(numExpr->getValue()) + ", " + reg);
+    case ExpressionType::REAL:
+        std::cout << "Not Implemented yet" << std::endl;
+        // Allocating a GP register for the IEEE 754 Representation
+        reg2 = regTable.registerAllocate();
+
+        // Allocating the final result register
+        reg = regTable.floatRegisterAllocate();
+
+        emit("movl $" + std::to_string(floatToIEEE(std::dynamic_pointer_cast<RealExpr>(expr)->getValue())) + ", " + reg2);
+        emit("movl " + reg2 + ", " + reg);
+
+        // We can free the temp register we used
+        regTable.registerFree(reg2);
+
         break;
-    }
-    case ExpressionType::REAL: {
-        auto realExpr = std::dynamic_pointer_cast<RealExpr>(expr);
-        std::string temp = regTable.registerAllocate();
-        emit("movq $" + std::to_string(*(uint64_t*)&realExpr->getValue()) + ", " + temp);
-        emit("movq " + temp + ", " + reg);
-        regTable.registerFree(temp);
+
+    case ExpressionType::BOOL:
+        reg = regTable.registerAllocate();
+        emit("movb $" + std::to_string(std::dynamic_pointer_cast<BoolExpr>(expr)->getValue() ? 1 : 0) + ", " + reg);
         break;
-    }
-    case ExpressionType::BOOL: {
-        auto boolExpr = std::dynamic_pointer_cast<BoolExpr>(expr);
-        emit("movq $" + std::to_string(boolExpr->getValue() ? 1 : 0) + ", " + reg);
+
+    case ExpressionType::STRING:
+        std::cout << "Not Implemented yet" << std::endl;
         break;
-    }
-    case ExpressionType::BINARY: {
-        regTable.registerFree(reg);
+
+    case ExpressionType::BINARY:
         reg = generateBinaryExpr(std::dynamic_pointer_cast<BinaryExpr>(expr));
         break;
-    }
-    case ExpressionType::IDENTIFIER: {
-        auto idExpr = std::dynamic_pointer_cast<IdentifierExpr>(expr);
-        emit("movq " + idExpr->getName() + "(%rip), " + reg);
+
+    case ExpressionType::IDENTIFIER:
+        reg = regTable.registerAllocate();
+        emit("movl " + std::dynamic_pointer_cast<IdentifierExpr>(expr)->getName() + "(%rip), " + reg);
         break;
-    }
-    case ExpressionType::NOT: {
-        auto notExpr = std::dynamic_pointer_cast<NotExpr>(expr);
-        std::string operand = generateExpression(notExpr->getExpression());
-        emit("movq " + operand + ", " + reg);
-        emit("xorq $1, " + reg);
-        regTable.registerFree(operand);
+
+    case ExpressionType::NOT:
+        reg = generateExpression(std::dynamic_pointer_cast<NotExpr>(expr)->getExpression());
+        emit("xorb $1, " + reg + "b"); // Toggle the boolean value
+        return reg;
+
+    case ExpressionType::FUNC_CALL:
+        std::cout << "Not implemented yet" << std::endl;
+        //auto funcExpr = std::dynamic_pointer_cast<FunctionCallExpr>(expr);
+        //// Save registers before function call
+        //emit("pushq %rax");
+        //emit("pushq %rcx");
+        //emit("pushq %rdx");
+        //
+        //// Generate code for arguments in reverse order
+        //auto args = funcExpr->getArguments();
+        //for (auto it = args.rbegin(); it != args.rend(); ++it) {
+        //    std::string argReg = generateExpression(*it);
+        //    emit("pushq " + argReg);
+        //    regTable.registerFree(argReg);
+        //}
+        //
+        //// Call function
+        //emit("call " + funcExpr->getName());
+        //
+        //// Clean up stack
+        //if (!args.empty()) {
+        //    emit("addq $" + std::to_string(args.size() * 8) + ", %rsp");
+        //}
+        //
+        //// Restore registers
+        //emit("popq %rdx");
+        //emit("popq %rcx");
+        //emit("popq %rax");
+        //
+        //// Move result to a new register
+        //std::string resultReg = regTable.registerAllocate();
+        //emit("movl %eax, " + resultReg);
+        //return resultReg;
         break;
-    }
+    default:
+        throw CompilerException("Unsupported expression type in code generation", expr->getLineNumber());
     }
 
-    if (expr->getNeedsConversion()) {
-        convertType(reg, expr->getExpressionType(), expr->getTargetType());
+    // Convert item if needed
+    if (expr->getNeedsConversion())
+    {
+        TypeKind from = expr->getExpressionType();
+        TypeKind to = expr->getTargetType();
+        std::string newReg;
+
+        // Convert to bool
+        if (to == TypeKind::BOOL)
+        {
+            if (from == TypeKind::NUM)
+            {
+                // Convert num to bool
+                emit("cmpl $0, " + reg);
+                emit("setne " + reg + "b");
+                emit("movzbq " + reg + "b, " + reg);
+            }
+            else if (from == TypeKind::REAL)
+            {
+                std::string zeroReg = regTable.floatRegisterAllocate();
+                emit("xorps " + zeroReg + ", " + zeroReg); // Set Register to 0
+                emit("ucomiss " + zeroReg + ", " + reg); // Unordered compare float with 0
+                emit("setne " + reg + "b"); // Set to 1 if not equal
+                emit("movzbq " + reg + "b, " + reg); // Zero-extend to full register
+                regTable.registerFree(zeroReg);
+            }
+            return reg;
+        }
+
+        // Convert float to num
+        if (to == TypeKind::NUM)
+        {
+            if (from == TypeKind::REAL)
+            {
+                newReg = regTable.registerAllocate();
+                emit("cvttss2si " + reg + ", " + newReg); // cvt(convert) t(truncate) ss(single precision) si(signed int)
+                regTable.registerFree(reg);
+                reg = newReg;
+            }
+            return reg;
+        }
+
+        // Convert to float
+        if ((from == TypeKind::BOOL || from == TypeKind::NUM) && to == TypeKind::REAL)
+        {
+            newReg = regTable.floatRegisterAllocate();
+            emit("cvtsi2ss " + reg + ", " + newReg);  // Convert integer to float
+            regTable.registerFree(reg);
+            reg = newReg;
+            return reg;
+        }
     }
 
     return reg;
 }
 
-std::string CodeGeneration::generateBinaryExpr(std::shared_ptr<BinaryExpr> expr) {
-    std::string left = generateExpression(expr->getLeft());
-    std::string right = generateExpression(expr->getRight());
-    std::string result = regTable.registerAllocate();
-
-    emit("movq " + left + ", " + result);
-
-    switch (expr->getType()) {
-    case BinaryExprType::ADD:
-        emit("addq " + right + ", " + result);
-        break;
-    case BinaryExprType::SUB:
-        emit("subq " + right + ", " + result);
-        break;
-    case BinaryExprType::MUL:
-        emit("imulq " + right + ", " + result);
-        break;
-    case BinaryExprType::DIV:
-        emit("movq " + result + ", %rax");
-        emit("cqto");  // Sign extend RAX into RDX:RAX
-        emit("idivq " + right);
-        emit("movq %rax, " + result);
-        break;
-    case BinaryExprType::EQUAL_EQUAL:
-        emit("cmpq " + right + ", " + result);
-        emit("sete %al");
-        emit("movzbq %al, " + result);
-        break;
-    case BinaryExprType::NOT_EQUAL:
-        emit("cmpq " + right + ", " + result);
-        emit("setne %al");
-        emit("movzbq %al, " + result);
-        break;
-    case BinaryExprType::LESS:
-        emit("cmpq " + right + ", " + result);
-        emit("setl %al");
-        emit("movzbq %al, " + result);
-        break;
-    case BinaryExprType::LESS_EQUAL:
-        emit("cmpq " + right + ", " + result);
-        emit("setle %al");
-        emit("movzbq %al, " + result);
-        break;
-    case BinaryExprType::GREATER:
-        emit("cmpq " + right + ", " + result);
-        emit("setg %al");
-        emit("movzbq %al, " + result);
-        break;
-    case BinaryExprType::GREATER_EQUAL:
-        emit("cmpq " + right + ", " + result);
-        emit("setge %al");
-        emit("movzbq %al, " + result);
-        break;
-    }
-
-    regTable.registerFree(left);
-    regTable.registerFree(right);
-    return result;
-}
-
-void CodeGeneration::convertType(std::string& reg, TypeKind from, TypeKind to) {
-    if (from == to) return;
-
-    std::string temp = regTable.registerAllocate();
-
-    switch (to) {
+std::string CodeGeneration::generateBinaryExpr(std::shared_ptr<BinaryExpr> binExpr)
+{
+    std::string reg = generateExpression(binExpr->getLeft());
+    std::string rightReg = generateExpression(binExpr->getRight());
+    
+    // Both sides of the 
+    switch (binExpr->getTargetType())
+    {
+    // TODO ADD STRING
+    case TypeKind::BOOL:
     case TypeKind::NUM:
-        if (from == TypeKind::REAL) {
-            emit("cvttsd2siq " + reg + ", " + temp);
-            emit("movq " + temp + ", " + reg);
-        }
-        break;
-    case TypeKind::REAL:
-        if (from == TypeKind::NUM) {
-            emit("cvtsi2sdq " + reg + ", " + temp);
-            emit("movq " + temp + ", " + reg);
+    {
+        switch (binExpr->getType())
+        {
+        case BinaryExprType::ADD:
+            emit("addl " + rightReg + ", " + reg);
+            break;
+
+        case BinaryExprType::SUB:
+            emit("subl " + rightReg + ", " + reg);
+            break;
+
+        case BinaryExprType::MUL:
+            emit("imull " + rightReg + ", " + reg);
+            break;
+
+        case BinaryExprType::DIV:
+            emit("pushq %rdx");
+            emit("movl " + reg + ", %eax");
+            // Convert long to double long
+            emit("cltd");
+            emit("idivl " + rightReg);
+            emit("movl %eax, " + reg);
+            emit("popq %rdx"); // Retrieve RDX
+            break;
+
+        case BinaryExprType::GREATER:
+            emit("cmpl " + rightReg + ", " + reg);
+            emit("setg " + reg + "b");
+            emit("movzbq " + reg + "b, " + reg);
+            break;
+
+        case BinaryExprType::GREATER_EQUAL:
+            emit("cmpl " + rightReg + ", " + reg);
+            emit("setge " + reg + "b");
+            emit("movzbq " + reg + "b, " + reg);
+            break;
+
+        case BinaryExprType::LESS:
+            emit("cmpl " + rightReg + ", " + reg);
+            emit("setl " + reg + "b");
+            emit("movzbq " + reg + "b, " + reg);
+            break;
+
+        case BinaryExprType::LESS_EQUAL:
+            emit("cmpl " + rightReg + ", " + reg);
+            emit("setle " + reg + "b");
+            emit("movzbq " + reg + "b, " + reg);
+            break;
+
+        case BinaryExprType::EQUAL_EQUAL:
+            emit("cmpl " + rightReg + ", " + reg);
+            emit("sete " + reg + "b");
+            emit("movzbq " + reg + "b, " + reg);
+            break;
+
+        case BinaryExprType::NOT_EQUAL:
+            emit("cmpl " + rightReg + ", " + reg);
+            emit("setne " + reg + "b");
+            emit("movzbq " + reg + "b, " + reg);
+            break;
         }
         break;
     }
+    // Different operations for floats
+    case TypeKind::REAL:
+    {
+        switch (binExpr->getType())
+        {
+        case BinaryExprType::ADD:
+            emit("addss " + rightReg + ", " + reg);
+            break;
+        case BinaryExprType::SUB:
+            emit("subss " + rightReg + ", " + reg);
+            break;
+        case BinaryExprType::MUL:
+            emit("mulss " + rightReg + ", " + reg);
+            break;
+        case BinaryExprType::DIV:
+            emit("divss " + rightReg + ", " + reg);
+            break;
+        case BinaryExprType::GREATER:
+            emit("ucomiss " + rightReg + ", " + reg);
+            emit("seta " + reg + "b");
+            emit("movzbq " + reg + "b, " + reg);
+            break;
+        case BinaryExprType::GREATER_EQUAL:
+            emit("ucomiss " + rightReg + ", " + reg);
+            emit("setae " + reg + "b");
+            emit("movzbq " + reg + "b, " + reg);
+            break;
+        case BinaryExprType::LESS:
+            emit("ucomiss " + reg + ", " + rightReg);
+            emit("seta " + reg + "b");
+            emit("movzbq " + reg + "b, " + reg);
+            break;
+        case BinaryExprType::LESS_EQUAL:
+            emit("ucomiss " + reg + ", " + rightReg);
+            emit("setae " + reg + "b");
+            emit("movzbq " + reg + "b, " + reg);
+            break;
+        case BinaryExprType::EQUAL_EQUAL:
+            emit("ucomiss " + rightReg + ", " + reg);
+            emit("sete " + reg + "b");
+            emit("movzbq " + reg + "b, " + reg);
+            break;
+        case BinaryExprType::NOT_EQUAL:
+            emit("ucomiss " + rightReg + ", " + reg);
+            emit("setne " + reg + "b");
+            emit("movzbq " + reg + "b, " + reg);
+            break;
+        }
+        break;
+    }
+    }
 
-    regTable.registerFree(temp);
+    regTable.registerFree(rightReg);
+    return reg;
 }

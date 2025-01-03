@@ -1,6 +1,9 @@
 #pragma once
+// REMOVE AFTER TEMP USE
+#include <iostream>
 #include <memory>
 #include <fstream>
+#include <sstream>
 #include "RegisterTable.h"
 #include "../parser/nodes/ProgramNode.h"
 #include "../parser/nodes/AssignmentStatementNode.h"
@@ -52,12 +55,22 @@ private:
 	 * */
 	std::string createLabel();
 
+	/*
+	Function that converts float to IEEE 754 representation
+	Inputs: a float to convert to its representation
+	Outputs: an int containting the float in IEEE 754 repressentation
+	*/
+	uint32_t floatToIEEE(float value);
+
 	// Generating functions for each item
-	void generateFunction(std::shared_ptr<FunctionNode> func);
+	void generateGlobal(std::shared_ptr<Symbol> symbol);
+	//void generateFunction(std::shared_ptr<FunctionNode> func);
 	void generateStatement(std::shared_ptr<StatementNode> statement);
 
+	// Statement functions
 	void generateDeclaration(std::shared_ptr<DeclarationStatementNode> decl);
 
 	// Expression Generation Functions
 	std::string generateExpression(std::shared_ptr<ExpressionNode> expr);
+	std::string generateBinaryExpr(std::shared_ptr<BinaryExpr> binExpr);
 };

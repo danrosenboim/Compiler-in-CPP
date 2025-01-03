@@ -269,8 +269,6 @@ void Analyzer::analyzeFor(std::shared_ptr<ForStatementNode> forNode)
 
 	// Analyze the loop body
 	analyzeBlock(forNode->getBody());
-
-	symbolTable->exitScope();
 }
 
 void Analyzer::analyzeIf(std::shared_ptr<IfStatementNode> ifNode)
@@ -288,14 +286,12 @@ void Analyzer::analyzeIf(std::shared_ptr<IfStatementNode> ifNode)
 
 	symbolTable->enterScope();
 	analyzeBlock(ifNode->getBody());
-	symbolTable->exitScope();
 
 	// Analyzing the else block part
 	if (ifNode->getElseBlock())
 	{
 		symbolTable->enterScope();
 		analyzeBlock(ifNode->getElseBlock());
-		symbolTable->exitScope();
 	}
 }
 
@@ -345,22 +341,33 @@ TypeKind Analyzer::analyzeExpression(std::shared_ptr<ExpressionNode> expression)
 	switch (expression->getExpressionVariant())
 	{
 	case ExpressionType::BINARY:
-		return analyzeBinaryExpression(std::dynamic_pointer_cast<BinaryExpr>(expression));
+		resultType = analyzeBinaryExpression(std::dynamic_pointer_cast<BinaryExpr>(expression));
+		break;
 
 	case ExpressionType::NOT:
-		return analyzeNot(std::dynamic_pointer_cast<NotExpr>(expression));
+		resultType = analyzeNot(std::dynamic_pointer_cast<NotExpr>(expression));
+		break;
 
-	case ExpressionType::NUMBER: return TypeKind::NUM;
-	case ExpressionType::REAL: return TypeKind::REAL;
-	case ExpressionType::BOOL: return TypeKind::BOOL;
-	case ExpressionType::STRING: return TypeKind::TEXT;
+	case ExpressionType::NUMBER:
+		resultType = TypeKind::NUM;
+		break;
+	case ExpressionType::REAL:
+		resultType = TypeKind::REAL;
+		break;
+	case ExpressionType::BOOL:
+		resultType = TypeKind::BOOL;
+		break;
+	case ExpressionType::STRING:
+		resultType = TypeKind::TEXT;
+		break;
 
 	case ExpressionType::IDENTIFIER:
-		return analyzeIdentifier(std::dynamic_pointer_cast<IdentifierExpr>(expression));
+		resultType = analyzeIdentifier(std::dynamic_pointer_cast<IdentifierExpr>(expression));
+		break;
 
 	case ExpressionType::FUNC_CALL:
-		return analyzeFunctionCall(std::dynamic_pointer_cast<FunctionCallExpr>(expression));
-
+		resultType = analyzeFunctionCall(std::dynamic_pointer_cast<FunctionCallExpr>(expression));
+		break;
 
 	case ExpressionType::ERROR:
 	default:
@@ -389,6 +396,13 @@ TypeKind Analyzer::analyzeBinaryExpression(std::shared_ptr<BinaryExpr> expressio
 			return TypeKind::TEXT;
 		}
 
+		if (leftType == TypeKind::BOOL && rightType == TypeKind::BOOL)
+		{
+			expression->getLeft()->markForConversion(TypeKind::NUM);
+			expression->getRight()->markForConversion(TypeKind::NUM);
+			return TypeKind::NUM;
+		}
+
 		return convertBinaryOperation(leftType, rightType, expression->getLeft(), expression->getRight());
 
 
@@ -396,24 +410,32 @@ TypeKind Analyzer::analyzeBinaryExpression(std::shared_ptr<BinaryExpr> expressio
 	case BinaryExprType::MUL:
 	case BinaryExprType::DIV:
 		// These operations are only valid for numeric types
-		if (leftType == TypeKind::TEXT || rightType == TypeKind::TEXT) {
+
+		if (leftType == TypeKind::TEXT || rightType == TypeKind::TEXT)
+		{
 			throw AnalyzerCannotPerformOnText(expression->getLineNumber());
 		}
-
+		if (leftType == TypeKind::BOOL && rightType == TypeKind::BOOL)
+		{
+			expression->getLeft()->markForConversion(TypeKind::NUM);
+			expression->getRight()->markForConversion(TypeKind::NUM);
+			return TypeKind::NUM;
+		}
 		return convertBinaryOperation(leftType, rightType, expression->getLeft(), expression->getRight());
-
 
 	case BinaryExprType::EQUAL_EQUAL:
 	case BinaryExprType::NOT_EQUAL:
 		// Only accepts 2 texts
 		if (leftType == TypeKind::TEXT || rightType == TypeKind::TEXT)
 		{
-			if (leftType == rightType)
+			if (leftType != rightType)
 			{
-				return TypeKind::BOOL;
+				throw AnalyzerCannotPerformOnText(expression->getLineNumber());
 			}
-			throw AnalyzerCannotPerformOnText(expression->getLineNumber());
+			return TypeKind::BOOL;
 		}
+
+		convertBinaryOperation(leftType, rightType, expression->getLeft(), expression->getRight());
 
 		return TypeKind::BOOL;
 
@@ -423,8 +445,15 @@ TypeKind Analyzer::analyzeBinaryExpression(std::shared_ptr<BinaryExpr> expressio
 	case BinaryExprType::LESS_EQUAL:
 		if (leftType == TypeKind::TEXT || rightType == TypeKind::TEXT)
 		{
-			throw AnalyzerCannotPerformOnText(expression->getLineNumber());
+			if (leftType != rightType)
+			{
+				throw AnalyzerCannotPerformOnText(expression->getLineNumber());
+			}
+			return TypeKind::BOOL;
 		}
+
+		convertBinaryOperation(leftType, rightType, expression->getLeft(), expression->getRight());
+
 		return TypeKind::BOOL;
 
 	default:

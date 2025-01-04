@@ -880,6 +880,8 @@ std::string CodeGeneration::generateBinaryExpr(std::shared_ptr<BinaryExpr> binEx
             emit("setne " + reg + "b");
             emit("movzbq " + reg + "b, " + reg);
             break;
+	  default:
+		break;
         }
         break;
     }

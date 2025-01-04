@@ -7,17 +7,17 @@ RegisterTable::RegisterTable()
 
 std::string RegisterTable::registerAllocate()
 {
-	auto reg = std::find_if(scratchRegisters.begin(), scratchRegisters.end(), [](auto pairs){ return !pairs.second; });
-
-	// Checking if there are free registers
-	if(reg == scratchRegisters.end())
+	for(auto& reg : scratchRegisters)
 	{
-		throw CodeGenOutOfFreeRegisters();
+		// Finding a free register
+		if(!reg.second)
+		{
+			reg.second = true; // Marking it as used
+			return reg.first;
+		}
 	}
-
-	reg->second = true;
-
-	return reg->first;
+	
+	throw CodeGenOutOfFreeRegisters();
 }
 
 void RegisterTable::registerFree(std::string reg)
@@ -41,17 +41,16 @@ void RegisterTable::registerFree(std::string reg)
 
 std::string RegisterTable::floatRegisterAllocate()
 {
-	auto reg = std::find_if(floatRegisters.begin(), floatRegisters.end(), [](auto pairs) { return !pairs.second; });
-
-	// Checking if there are free registers
-	if (reg == floatRegisters.end())
+	for(auto& reg : floatRegisters)
 	{
-		throw CodeGenOutOfFreeRegisters();
+		if(!reg.second)
+		{
+			reg.second = true; // Marking it as used
+			return reg.first;
+		}
 	}
 
-	reg->second = true;
-
-	return reg->first;
+	throw CodeGenOutOfFreeRegisters();
 }
 
 void RegisterTable::floatRegisterFree(std::string reg)

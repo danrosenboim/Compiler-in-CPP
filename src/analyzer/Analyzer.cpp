@@ -38,7 +38,7 @@ std::unique_ptr<ProgramNode> Analyzer::analyze(std::unique_ptr<ProgramNode> prog
 		}
 	}
 
-	return std::move(programNode);
+	return programNode;
 }
 
 bool Analyzer::canConvert(TypeKind from, TypeKind to)

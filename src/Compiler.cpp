@@ -9,12 +9,12 @@ void Compiler::run()
 	// Error handling
 	try
 	{
-		std::unique_ptr<ProgramNode> programAST = parser->parseProgram();
-		programAST = analyzer->analyze(std::move(programAST));
+		std::shared_ptr<ProgramNode> programAST = parser->parseProgram();
+		analyzer->analyze(programAST);
 
 		std::cout << "Compiler analyzation complete." << std::endl;
 
-		codeGen->generate(std::move(programAST));
+		codeGen->generate(programAST);
 		std::cout << "Output finished" << std::endl;
 	}
 	catch (const CompilerException& e)

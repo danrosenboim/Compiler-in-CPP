@@ -35,7 +35,7 @@ public:
 	 * Inputs: Program AST for code generation
 	 * Outputs: none
 	 * */
-	void generate(std::unique_ptr<ProgramNode> head);
+	void generate(std::shared_ptr<ProgramNode> head);
 
 private:
 	// Stores the output file stream

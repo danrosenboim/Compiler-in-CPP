@@ -4,7 +4,7 @@ Analyzer::Analyzer() : symbolTable(std::make_unique<SymbolTable>()), currentFunc
 {
 }
 
-std::unique_ptr<ProgramNode> Analyzer::analyze(std::unique_ptr<ProgramNode> programNode)
+void Analyzer::analyze(std::shared_ptr<ProgramNode> programNode)
 {
 	symbolTable->enterScope();
 
@@ -38,7 +38,6 @@ std::unique_ptr<ProgramNode> Analyzer::analyze(std::unique_ptr<ProgramNode> prog
 		}
 	}
 
-	return programNode;
 }
 
 bool Analyzer::canConvert(TypeKind from, TypeKind to)

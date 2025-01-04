@@ -11,18 +11,18 @@ CodeGeneration::CodeGeneration(const std::string& inputPath, const std::string& 
 	emit(".text");
 }
 
-void CodeGeneration::generate(std::unique_ptr<ProgramNode> head)
+void CodeGeneration::generate(std::shared_ptr<ProgramNode> head)
 {
     // Generating the bss section for global variables and initializing them in main
 	emit(".bss");
-	for (const auto& decl : head->getDeclarations())
+	for (auto& decl : head->getDeclarations())
 	{
 		generateGlobal(decl);
 	}
 
     // Generating all the functions
 	emit(".text");
-	for (const auto& func : head->getFunctions())
+	for (auto& func : head->getFunctions())
 	{
 		generateFunction(func);
 	}
@@ -33,7 +33,7 @@ void CodeGeneration::generate(std::unique_ptr<ProgramNode> head)
 	emit("pushq %rbp");
 	emit("movq %rsp, %rbp");
 
-	for (const auto& stmt : head->getStatements())
+	for (auto& stmt : head->getStatements())
 	{
 		generateStatement(stmt);
 	}
@@ -41,7 +41,11 @@ void CodeGeneration::generate(std::unique_ptr<ProgramNode> head)
     emit("movq $0, %rax"); // Return 0 by default
 	emit("movq %rbp, %rsp");
 	emit("popq %rbp");
-	emit("ret");
+
+    // Exit syscall
+    emit("movq $60, %rax"); // Exit syscall number
+    emit("mov $0, %rdi"); // exit status 0
+    emit("syscall");
 
     emit(".rodata");
     emit(".align 4");
@@ -290,6 +294,8 @@ void CodeGeneration::generateStatement(std::shared_ptr<StatementNode> statement)
         break;
     case StatementType::IN:
     case StatementType::OUT:
+        generateOutStatement(std::dynamic_pointer_cast<OutStatementNode>(statement));
+        break;
     case StatementType::RETURN:
         generateReturn(std::dynamic_pointer_cast<ReturnStatementNode>(statement));
         break;

@@ -29,9 +29,9 @@ public:
 	/*
 	Function that analyzes the file and checks the types
 	Inputs: the head output node
-	Outputs: returns the programNode after use
+	Outputs: none
 	*/
-	std::unique_ptr<ProgramNode> analyze(std::unique_ptr<ProgramNode> programNode);
+	void analyze(std::shared_ptr<ProgramNode> programNode);
 	
 private:
 	// Symbol table to keep track of all the variables and functions

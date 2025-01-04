@@ -8,10 +8,10 @@ Parser::Parser(std::shared_ptr<Lexer> scanner) : scanner(scanner), currentToken(
 
 
 // Program -> ( Function | Statement )*
-std::unique_ptr<ProgramNode> Parser::parseProgram()
+std::shared_ptr<ProgramNode> Parser::parseProgram()
 {
 	// Setting up AST head
-	auto programHead = std::make_unique<ProgramNode>(0);
+	auto programHead = std::make_shared<ProgramNode>(0);
 
 	// Continue parsing the program until its over
 	while(currentToken.getTag() != TokenType::END_OF_FILE)

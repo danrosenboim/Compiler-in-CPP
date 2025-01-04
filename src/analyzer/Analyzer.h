@@ -29,9 +29,9 @@ public:
 	/*
 	Function that analyzes the file and checks the types
 	Inputs: the head output node
-	Outputs: none
+	Outputs: returns the programNode after use
 	*/
-	void analyze(std::unique_ptr<ProgramNode> programNode);
+	std::unique_ptr<ProgramNode> analyze(std::unique_ptr<ProgramNode> programNode);
 	
 private:
 	// Symbol table to keep track of all the variables and functions
@@ -40,6 +40,9 @@ private:
 	// Instead of passing this variable around we can keep track of the current function were in using
 	// this variable.
 	TypeKind currentFunctionReturnType;
+
+	// Current function name
+	std::string currentFunctionName = "";
 
 	/*
 	 * Checks if one type can convert to the other

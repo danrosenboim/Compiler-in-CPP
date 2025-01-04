@@ -1,6 +1,6 @@
 #include "Compiler.h"
 
-Compiler::Compiler(const std::string& filePath) : m_filePath(filePath), scanner(std::make_shared<Lexer>(filePath)), parser(std::make_unique<Parser>(scanner)), analyzer(std::make_unique<Analyzer>())
+Compiler::Compiler(const std::string& filePath, const std::string& outputPath) : m_filePath(filePath), m_outputPath(outputPath), scanner(std::make_shared<Lexer>(filePath)), parser(std::make_unique<Parser>(scanner)), analyzer(std::make_unique<Analyzer>()), codeGen(std::make_unique<CodeGeneration>(outputPath))
 { }
 
 
@@ -10,9 +10,12 @@ void Compiler::run()
 	try
 	{
 		std::unique_ptr<ProgramNode> programAST = parser->parseProgram();
-		analyzer->analyze(std::move(programAST));
+		programAST = analyzer->analyze(std::move(programAST));
 
 		std::cout << "Compiler analyzation complete." << std::endl;
+
+		codeGen->generate(std::move(programAST));
+		std::cout << "Output finished" << std::endl;
 	}
 	catch (const CompilerException& e)
 	{

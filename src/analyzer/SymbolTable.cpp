@@ -12,8 +12,11 @@ void SymbolTable::enterScope()
 std::unordered_map<std::string, std::shared_ptr<Symbol>> SymbolTable::exitScope()
 {
 	--scopesEntered;
+	std::unordered_map<std::string, std::shared_ptr<Symbol>> retValue = symbolTableStack.back();
+	symbolTableStack.pop_back();
+
 	// Return the latest element
-	return symbolTableStack.pop_back();
+	return retValue;
 }
 
 int SymbolTable::getScopeLevel() const

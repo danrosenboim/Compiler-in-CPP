@@ -8,6 +8,9 @@ class ExpressionNode;
 class StatementNode;
 class ParameterNode;
 class Symbol;
+class FunctionNode;
+class DeclarationStatementNode;
+class BlockNode;
 
 // This class will be used as a node for the AST
 class Node

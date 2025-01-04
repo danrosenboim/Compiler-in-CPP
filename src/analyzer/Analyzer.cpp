@@ -1,18 +1,21 @@
 #include "Analyzer.h"
 
-Analyzer::Analyzer() : symbolTable(std::make_unique<SymbolTable>()), currentFunctionReturnType(TypeKind::NUM)
+Analyzer::Analyzer() : symbolTable(std::make_unique<SymbolTable>()), currentFunctionReturnType(TypeKind::NUM), currentFunctionName("")
 {
 }
 
-void Analyzer::analyze(std::unique_ptr<ProgramNode> programNode)
+std::unique_ptr<ProgramNode> Analyzer::analyze(std::unique_ptr<ProgramNode> programNode)
 {
 	symbolTable->enterScope();
 
 	// Loop through all the function declarations and add them
 	for (auto& func : programNode->getFunctions())
 	{
+		currentFunctionName = func->getName();
 		registerFunction(func);
 	}
+
+	currentFunctionName = "";
 
 	// Now we can loop over the funcitons and then the statements
 	// We do this in this order because the statements may use functions
@@ -34,6 +37,8 @@ void Analyzer::analyze(std::unique_ptr<ProgramNode> programNode)
 			programNode->addDeclaration(declaration.second);
 		}
 	}
+
+	return std::move(programNode);
 }
 
 bool Analyzer::canConvert(TypeKind from, TypeKind to)
@@ -303,6 +308,10 @@ void Analyzer::analyzeIn(std::shared_ptr<InStatementNode> inNode)
 	{
 		throw AnalyzerUndefinedVariable(inNode->getIdentifier(), inNode->getLineNumber());
 	}
+	if (varSymbol->varType == TypeKind::TEXT || varSymbol->varType == TypeKind::REAL)
+	{
+		throw AnalyzerCannotConvert(typeKindToString(varSymbol->varType), typeKindToString(TypeKind::NUM), inNode->getLineNumber());
+	}
 }
 
 void Analyzer::analyzeOut(std::shared_ptr<OutStatementNode> outNode)
@@ -313,12 +322,13 @@ void Analyzer::analyzeOut(std::shared_ptr<OutStatementNode> outNode)
 void Analyzer::analyzeReturn(std::shared_ptr<ReturnStatementNode> returnNode)
 {
 	// Make sure the return is in a scope
-	if (symbolTable->getScopeLevel() == 0)
+	if (currentFunctionName != "")
 	{
 		throw AnalyzerCannotReturnInGlobal(returnNode->getLineNumber());
 	}
 
 	TypeKind returnType = analyzeExpression(returnNode->getExpression());
+	returnNode->setFunctionName(currentFunctionName);
 
 	// Check if return type matches function's declared return type
 	if (!canConvert(returnType, currentFunctionReturnType))
@@ -387,25 +397,6 @@ TypeKind Analyzer::analyzeBinaryExpression(std::shared_ptr<BinaryExpr> expressio
 	switch (expression->getType())
 	{
 	case BinaryExprType::ADD:
-		// Special case for text concatenation
-		if (leftType == TypeKind::TEXT || rightType == TypeKind::TEXT) {
-			if (leftType != rightType)
-			{
-				throw AnalyzerCannotPerformOnText(expression->getLineNumber());
-			}
-			return TypeKind::TEXT;
-		}
-
-		if (leftType == TypeKind::BOOL && rightType == TypeKind::BOOL)
-		{
-			expression->getLeft()->markForConversion(TypeKind::NUM);
-			expression->getRight()->markForConversion(TypeKind::NUM);
-			return TypeKind::NUM;
-		}
-
-		return convertBinaryOperation(leftType, rightType, expression->getLeft(), expression->getRight());
-
-
 	case BinaryExprType::SUB:
 	case BinaryExprType::MUL:
 	case BinaryExprType::DIV:
@@ -425,7 +416,6 @@ TypeKind Analyzer::analyzeBinaryExpression(std::shared_ptr<BinaryExpr> expressio
 
 	case BinaryExprType::EQUAL_EQUAL:
 	case BinaryExprType::NOT_EQUAL:
-		// Only accepts 2 texts
 		if (leftType == TypeKind::TEXT || rightType == TypeKind::TEXT)
 		{
 			if (leftType != rightType)
@@ -439,17 +429,14 @@ TypeKind Analyzer::analyzeBinaryExpression(std::shared_ptr<BinaryExpr> expressio
 
 		return TypeKind::BOOL;
 
+
 	case BinaryExprType::GREATER:
 	case BinaryExprType::GREATER_EQUAL:
 	case BinaryExprType::LESS:
 	case BinaryExprType::LESS_EQUAL:
 		if (leftType == TypeKind::TEXT || rightType == TypeKind::TEXT)
 		{
-			if (leftType != rightType)
-			{
-				throw AnalyzerCannotPerformOnText(expression->getLineNumber());
-			}
-			return TypeKind::BOOL;
+			throw AnalyzerCannotPerformOnText(expression->getLineNumber());
 		}
 
 		convertBinaryOperation(leftType, rightType, expression->getLeft(), expression->getRight());

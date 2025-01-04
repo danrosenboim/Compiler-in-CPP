@@ -15,6 +15,8 @@ std::string RegisterTable::registerAllocate()
 		throw std::exception();
 	}
 
+	reg->second = true;
+
 	return reg->first;
 }
 
@@ -46,6 +48,8 @@ std::string RegisterTable::floatRegisterAllocate()
 		// ERROR
 		throw std::exception();
 	}
+
+	reg->second = true;
 
 	return reg->first;
 }

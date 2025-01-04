@@ -2,6 +2,8 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include "../exceptions/codegen/CodeGenCannotLeaveGlobalSpace.h"
+#include "../exceptions/codegen/CodeGenExceededAllocatedStackSpace.h"
 
 class ScopeManager {
 public:

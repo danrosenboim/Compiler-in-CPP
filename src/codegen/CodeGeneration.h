@@ -23,11 +23,12 @@
 #include "../parser/nodes/FunctionNode.h"
 #include "../parser/nodes/ReturnStatementNode.h"
 #include "../exceptions/CompilerException.h"
+#include "../exceptions/codegen/CodeGenCantOpenOutputFile.h"
 
 class CodeGeneration
 {
 public:
-	CodeGeneration(const std::string& outputPath);
+	CodeGeneration(const std::string& inputPath, const std::string& outputPath);
 	
 	/*
 	 * Function that will initiate the code generation sequence
@@ -105,4 +106,10 @@ private:
 	std::string generateExpression(std::shared_ptr<ExpressionNode> expr);
 	std::string generateBinaryExpr(std::shared_ptr<BinaryExpr> binExpr);
 	std::string generateFunctionCall(std::shared_ptr<FunctionCallExpr> funcExpr);
+
+	// Out statement modes
+	void generateNumberOut(std::string reg);
+	void generateNewLineOut();
+	void generateFloatOut(std::string reg);
+
 };

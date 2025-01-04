@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <unordered_map>
+#include "../exceptions/codegen/CodeGenOutOfFreeRegisters.h"
 
 // A table that keeps track of used registers
 class RegisterTable

@@ -34,8 +34,9 @@ void ScopeManager::exitScope()
 
 int ScopeManager::addVariable(const std::string& varName)
 {
-    if (scopeChain.empty()) {
-        throw std::exception();
+    if (scopeChain.empty())
+    {
+        throw CodeGenCannotLeaveGlobalSpace();
     }
 
     auto& currentScope = scopeChain.back();
@@ -44,8 +45,7 @@ int ScopeManager::addVariable(const std::string& varName)
     // Check if we exceeded allocated space
     if (-currentScope.currentOffset > currentScope.allocatedSize)
     {
-        //throw std::runtime_error("Exceeded allocated stack space");
-        throw std::exception();
+        throw CodeGenExceededAllocatedStackSpace();
     }
 
     currentScope.variables[varName] = currentScope.currentOffset;
@@ -56,7 +56,7 @@ void ScopeManager::addVariableWithOffset(const std::string& varName, int manualO
 {
     if (scopeChain.empty())
     {
-        throw std::exception();
+        throw CodeGenCannotLeaveGlobalSpace();
     }
     scopeChain.back().variables[varName] = manualOffset;
 }

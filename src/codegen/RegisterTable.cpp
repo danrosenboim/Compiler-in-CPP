@@ -9,10 +9,10 @@ std::string RegisterTable::registerAllocate()
 {
 	auto reg = std::find_if(scratchRegisters.begin(), scratchRegisters.end(), [](auto pairs){ return !pairs.second; });
 
+	// Checking if there are free registers
 	if(reg == scratchRegisters.end())
 	{
-		// ERROR
-		throw std::exception();
+		throw CodeGenOutOfFreeRegisters();
 	}
 
 	reg->second = true;
@@ -33,7 +33,7 @@ void RegisterTable::registerFree(std::string reg)
 	auto it = scratchRegisters.find(reg);
 	if (it == scratchRegisters.end())
 	{
-		throw std::exception();
+		return;
 	}
 	
 	it->second = false;
@@ -43,10 +43,10 @@ std::string RegisterTable::floatRegisterAllocate()
 {
 	auto reg = std::find_if(floatRegisters.begin(), floatRegisters.end(), [](auto pairs) { return !pairs.second; });
 
+	// Checking if there are free registers
 	if (reg == floatRegisters.end())
 	{
-		// ERROR
-		throw std::exception();
+		throw CodeGenOutOfFreeRegisters();
 	}
 
 	reg->second = true;
@@ -56,10 +56,10 @@ std::string RegisterTable::floatRegisterAllocate()
 
 void RegisterTable::floatRegisterFree(std::string reg)
 {
-	auto it = scratchRegisters.find(reg);
-	if (it == scratchRegisters.end())
+	auto it = floatRegisters.find(reg);
+	if (it == floatRegisters.end())
 	{
-		throw std::exception();
+		return;
 	}
 
 	it->second = false;
@@ -80,21 +80,21 @@ void RegisterTable::addRegisters()
 void RegisterTable::addFloatRegisters()
 {
 	// Adding all the xmm registers that could be used
-	scratchRegisters.insert(std::make_pair("%xmm0", false));
-	scratchRegisters.insert(std::make_pair("%xmm1", false));
-	scratchRegisters.insert(std::make_pair("%xmm2", false));
-	scratchRegisters.insert(std::make_pair("%xmm3", false));
-	scratchRegisters.insert(std::make_pair("%xmm4", false));
-	scratchRegisters.insert(std::make_pair("%xmm5", false));
-	scratchRegisters.insert(std::make_pair("%xmm6", false));
-	scratchRegisters.insert(std::make_pair("%xmm7", false));
-	scratchRegisters.insert(std::make_pair("%xmm8", false));
-	scratchRegisters.insert(std::make_pair("%xmm9", false));
-	scratchRegisters.insert(std::make_pair("%xmm10", false));
-	scratchRegisters.insert(std::make_pair("%xmm11", false));
-	scratchRegisters.insert(std::make_pair("%xmm12", false));
-	scratchRegisters.insert(std::make_pair("%xmm13", false));
-	scratchRegisters.insert(std::make_pair("%xmm14", false));
-	scratchRegisters.insert(std::make_pair("%xmm15", false));
+	floatRegisters.insert(std::make_pair("%xmm0", false));
+	floatRegisters.insert(std::make_pair("%xmm1", false));
+	floatRegisters.insert(std::make_pair("%xmm2", false));
+	floatRegisters.insert(std::make_pair("%xmm3", false));
+	floatRegisters.insert(std::make_pair("%xmm4", false));
+	floatRegisters.insert(std::make_pair("%xmm5", false));
+	floatRegisters.insert(std::make_pair("%xmm6", false));
+	floatRegisters.insert(std::make_pair("%xmm7", false));
+	floatRegisters.insert(std::make_pair("%xmm8", false));
+	floatRegisters.insert(std::make_pair("%xmm9", false));
+	floatRegisters.insert(std::make_pair("%xmm10", false));
+	floatRegisters.insert(std::make_pair("%xmm11", false));
+	floatRegisters.insert(std::make_pair("%xmm12", false));
+	floatRegisters.insert(std::make_pair("%xmm13", false));
+	floatRegisters.insert(std::make_pair("%xmm14", false));
+	floatRegisters.insert(std::make_pair("%xmm15", false));
 
 }

@@ -1,13 +1,13 @@
 #include "CodeGeneration.h"
 
-CodeGeneration::CodeGeneration(const std::string& outputPath) : outputFile(outputPath), labels(0), regTable(), scopeManager()
+CodeGeneration::CodeGeneration(const std::string& inputPath, const std::string& outputPath) : outputFile(outputPath), labels(0), regTable(), scopeManager()
 {
 	if(!outputFile.is_open())
 	{
-		throw CompilerException("Could not open output file", 0);
+        throw CodeGenCantOutputOpenOutputFile(outputPath);
 	}
 
-	emit(".file \"" + outputPath.substr(outputPath.find('/') + 1, outputPath.size() - outputPath.find('/') + 1) + "\"");
+	emit(".file \"" + inputPath + "\"");
 	emit(".text");
 }
 
@@ -43,6 +43,11 @@ void CodeGeneration::generate(std::unique_ptr<ProgramNode> head)
 	emit("popq %rbp");
 	emit("ret");
 
+    emit(".rodata");
+    emit(".align 4");
+    emit(".float_1000:");
+    emit(".long 0x447A0000");  // IEEE 754 representation of 1000
+
     // Generate the final .rodata section
     generateStringLiterals();
 }
@@ -70,7 +75,6 @@ void CodeGeneration::generateStringLiterals()
 {
     if (stringLiterals.empty()) return;
 
-    emit(".section .rodata");
     for (const auto& [str, label] : stringLiterals)
     {
         emit(label + ":");
@@ -129,7 +133,7 @@ void CodeGeneration::generateGlobal(std::shared_ptr<Symbol> symbol)
         emit(".quad 0");
         break;
 	default:
-		std::cout << "Not implemented yet" << std::endl;
+        break;
 	}
 }
 
@@ -235,10 +239,20 @@ void CodeGeneration::generateFunction(std::shared_ptr<FunctionNode> func)
 
 void CodeGeneration::generateBlock(std::shared_ptr<BlockNode> block, bool enterScope)
 {
+    int allocationNeeded = 0;
+
     if (enterScope)
     {
+        // Block frame
+        emit("pushq %rbp");
+        emit("movq %rsp, %rbp");
+
+        allocationNeeded = ((block->getDeclarations().size() * 8 + 15) / 16) * 16; // Round to 16
         // Create new scope if the user requests
-        int allocationNeeded = ((block->getDeclarations().size() * 8 + 15) / 16) * 16; // Round to 16
+        if (allocationNeeded > 0)
+        {
+            emit("subq $" + std::to_string(allocationNeeded) + ", %rsp");
+        }
         scopeManager.enterScope(allocationNeeded);
     }
 
@@ -252,6 +266,8 @@ void CodeGeneration::generateBlock(std::shared_ptr<BlockNode> block, bool enterS
     {
         // Exit the scope
         scopeManager.exitScope();
+        emit("movq %rbp, %rsp");
+        emit("popq %rbp");
     }
 }
 
@@ -408,8 +424,14 @@ void CodeGeneration::generateDeclaration(std::shared_ptr<DeclarationStatementNod
 
 void CodeGeneration::generateForStatement(std::shared_ptr<ForStatementNode> forNode)
 {
+    // Stack frame
+    emit("pushq %rbp");
+    emit("movq %rsp, %rbp");
+
     // Allocating space for the loop variable and any variables in the body
-    scopeManager.enterScope(forNode->getBody()->getDeclarations().size() * 16 + 16);
+    int allocationNeeded = ((forNode->getBody()->getDeclarations().size() * 8 + 8 + 15) / 16) * 16; // Round to 16
+    emit("subq $" + std::to_string(allocationNeeded) + ", %rsp");
+    scopeManager.enterScope(allocationNeeded);
 
     // Add the loop variable to scope
     scopeManager.addVariable(forNode->getVariableName());
@@ -446,6 +468,8 @@ void CodeGeneration::generateForStatement(std::shared_ptr<ForStatementNode> forN
     emit(doneLabel + ":");
 
     scopeManager.exitScope();
+    emit("movq %rbp, %rsp");
+    emit("popq %rbp");
 }
 
 void CodeGeneration::generateIfStatement(std::shared_ptr<IfStatementNode> ifNode)
@@ -485,6 +509,92 @@ void CodeGeneration::generateIfStatement(std::shared_ptr<IfStatementNode> ifNode
     }
 
     emit(doneLabel + ":");
+}
+
+void CodeGeneration::generateOutStatement(std::shared_ptr<OutStatementNode> outNode)
+{
+    // Generate the expression to be printed
+    std::string resultReg = generateExpression(outNode->getExpression());
+
+    switch (outNode->getExpression()->getExpressionType())
+    {
+    case TypeKind::NUM:
+    {
+        generateNumberOut(resultReg);
+        generateNewLineOut();
+        break;
+    }
+    case TypeKind::BOOL:
+    {
+        // Add string literals for "true" and "false"
+        std::string trueLabel = addStringLiteral("true\n");
+        std::string falseLabel = addStringLiteral("false\n");
+
+        std::string printFalse = createLabel();
+        std::string endPrint = createLabel();
+
+        // Test the boolean value
+        emit("testb " + resultReg + "b, " + resultReg + "b");
+        emit("jz " + printFalse);
+
+        // Print "true"
+        emit("movq $1, %rax");      // sys_write
+        emit("movq $1, %rdi");      // stdout
+        emit("leaq " + trueLabel + "(%rip), %rsi");
+        emit("movq $5, %rdx");      // length = 5 ("true\n")
+        emit("syscall");
+        emit("jmp " + endPrint);
+
+        // Print "false"
+        emit(printFalse + ":");
+        emit("movq $1, %rax");      // sys_write
+        emit("movq $1, %rdi");      // stdout
+        emit("leaq " + falseLabel + "(%rip), %rsi");
+        emit("movq $6, %rdx");      // length = 6 ("false\n")
+        emit("syscall");
+
+        emit(endPrint + ":");
+        break;
+    }
+    case TypeKind::TEXT:
+    {
+        // For text, we need to print the string and a newline
+        // First print the string
+        emit("movq $1, %rax");      // sys_write
+        emit("movq $1, %rdi");      // stdout
+        emit("movq " + resultReg + ", %rsi");  // string pointer
+
+        // Calculate string length (find null terminator)
+        emit("xorq %rdx, %rdx");    // Clear length counter
+        std::string lengthLoop = createLabel();
+        emit(lengthLoop + ":");
+        emit("cmpb $0, (%rsi, %rdx)");  // Check for null terminator
+        emit("je " + createLabel());     // Exit if found
+        emit("incq %rdx");              // Increment length
+        emit("jmp " + lengthLoop);
+
+        // Print the string
+        emit("syscall");
+
+        // Print newline
+        emit("movq $1, %rax");      // sys_write
+        emit("movq $1, %rdi");      // stdout
+        emit("pushq $10");          // Push newline character
+        emit("movq %rsp, %rsi");    // Point to newline
+        emit("movq $1, %rdx");      // length = 1
+        emit("syscall");
+        emit("addq $8, %rsp");      // Clean up stack
+        break;
+    }
+    case TypeKind::REAL:
+    {
+        generateFloatOut(resultReg);
+        generateNewLineOut();
+        break;
+    }
+    }
+
+    regTable.registerFree(resultReg);
 }
 
 void CodeGeneration::generateReturn(std::shared_ptr<ReturnStatementNode> returnStmt)
@@ -885,4 +995,157 @@ std::string CodeGeneration::generateFunctionCall(std::shared_ptr<FunctionCallExp
         break;
     }
     return reg;
+}
+
+void CodeGeneration::generateNumberOut(std::string reg)
+{
+    // Convert number to string
+    // Reserve 12 bytes on stack for number string (10 digits + sign + null)
+    emit("subq $16, %rsp");  // Align to 16 bytes
+
+    // Save registers we'll use
+    emit("pushq %rax");
+    emit("pushq %rcx");
+    emit("pushq %rdx");
+    emit("pushq %rdi");
+    emit("pushq %rsi");
+    emit("pushq %r8");
+    emit("pushq %r9");
+
+    // Move number to process
+    emit("movl " + reg + ", %eax");
+    emit("movq %rsi, %rsp");          // Get stack pointer
+    emit("addq $71, %rsi");           // Skip saved registers to reach our buffer And the 16 byte buffer
+    emit("movq %rsi, %rdi");          // Start at the end for digit conversion
+
+    // Convert digits from right to left
+    emit("movl $10, %ecx");           // Divisor for base 10
+    std::string convertLoop = createLabel();
+    emit(convertLoop + ":");
+    emit("xorl %edx, %edx");          // Clear high bits for division
+    emit("divl %ecx");                // Divide by 10
+    emit("addb $48, %dl");            // Convert remainder to ASCII
+    emit("movb %dl, (%rsi)");         // Store digit
+    emit("decq %rsi");                // Move left in buffer
+    emit("testl %eax, %eax");         // Check if more digits
+    emit("jnz " + convertLoop);
+
+    // Handle negative numbers after digits
+    emit("testl " + reg + ", " + reg);
+    std::string notNegative = createLabel();
+    emit("jns " + notNegative);
+    emit("movb $45, (%rsi)");         // Store '-' at current position
+    emit("jmp " + notNegative);       // Skip decrementing rsi
+    emit(notNegative + ":");
+
+    // Calculate string length
+    emit("movq %rdi, %rdx");   // End of buffer
+    emit("subq %rsi, %rdx");   // Calculate length
+
+    // Write to stdout everything else is already in the correct location
+    emit("movq $1, %rax");     // sys_write
+    emit("movq $1, %rdi");     // stdout
+    emit("syscall");
+
+    // Restore registers
+    emit("popq %r9");
+    emit("popq %r8");
+    emit("popq %rsi");
+    emit("popq %rdi");
+    emit("popq %rdx");
+    emit("popq %rcx");
+    emit("popq %rax");
+
+    emit("addq $16, %rsp");    // Restore stack
+}
+
+void CodeGeneration::generateNewLineOut()
+{
+    // Reserve stack space and maintain 16-byte alignment
+    emit("subq $16, %rsp");
+
+    // Save registers we'll modify
+    emit("pushq %rax");
+    emit("pushq %rdi");
+    emit("pushq %rsi");
+    emit("pushq %rdx");
+
+    // Store newline character on stack
+    emit("movq %rsp, %rsi");
+    emit("addq $32, %rsi");      // Skip over saved registers
+    emit("movb $10, (%rsi)");    // ASCII 10 is newline
+
+    // Write syscall
+    emit("movq $1, %rax");       // sys_write
+    emit("movq $1, %rdi");       // stdout file descriptor
+    emit("movq $1, %rdx");       // length = 1 byte
+
+    emit("syscall");
+
+    // Restore registers
+    emit("popq %rdx");
+    emit("popq %rsi");
+    emit("popq %rdi");
+    emit("popq %rax");
+
+    // Restore stack
+    emit("addq $16, %rsp");
+}
+
+void CodeGeneration::generateFloatOut(std::string reg)
+{
+    // Get the integer part using truncation
+    std::string intReg = regTable.registerAllocate();
+    emit("cvttss2si " + reg + ", " + intReg);
+
+    // Print the integer part 
+    generateNumberOut(intReg);
+    regTable.registerFree(intReg);
+
+    // Print decimal point
+    emit("subq $16, %rsp"); // Reserve aligned stack space
+    emit("pushq %rax"); // Save registers we'll modify
+    emit("pushq %rdi");
+    emit("pushq %rsi");
+    emit("pushq %rdx");
+
+    // Write the decimal point
+    emit("movq %rsp, %rsi");      // Point to our stack space
+    emit("addq $32, %rsi");       // Skip saved registers
+    emit("movb $46, (%rsi)");     // Store '.' character
+
+    emit("movq $1, %rax");        // sys_write
+    emit("movq $1, %rdi");        // stdout
+    emit("movq $1, %rdx");        // length is 1
+    emit("syscall");
+
+    // Restore registers
+    emit("popq %rdx");
+    emit("popq %rsi");
+    emit("popq %rdi");
+    emit("popq %rax");
+    emit("addq $16, %rsp");
+
+    // Now handle decimal part
+    // Convert integer back to float and subtract from original to get just decimal part
+    std::string tempFloatReg = regTable.floatRegisterAllocate();
+    emit("cvtsi2ss " + intReg + ", " + tempFloatReg);    // Convert back to float
+    emit("subss " + tempFloatReg + ", " + reg);          // Get just decimal part
+
+    // Multiply by 1000 to get 3 decimal places
+    emit("mulss .float_1000(%rip), " + reg);
+
+    // Convert to integer
+    std::string decimalReg = regTable.registerAllocate();
+    emit("cvtss2si " + reg + ", " + decimalReg);
+
+    // Ensure positive (in case of negative numbers, we already handled sign in integer part)
+    emit("andl $0x7FFFFFFF, " + decimalReg);
+
+    // Print the three decimal digits, handling leading zeros
+    generateNumberOut(decimalReg);
+
+    // Clean up registers
+    regTable.registerFree(tempFloatReg);
+    regTable.registerFree(decimalReg);
 }

@@ -47,7 +47,7 @@ void CodeGeneration::generate(std::shared_ptr<ProgramNode> head)
     emit("mov $0, %rdi"); // exit status 0
     emit("syscall");
 
-    emit(".rodata");
+    emit(".section rodata");
     emit(".align 4");
     emit(".float_1000:");
     emit(".long 0x447A0000");  // IEEE 754 representation of 1000
@@ -207,14 +207,14 @@ void CodeGeneration::generateFunction(std::shared_ptr<FunctionNode> func)
         // Filling up 6 general purpose registers
         if (intRegCount < 6)
         {
-            emit("movq " + intRegs[intRegCount++] + ", " + std::to_string(offset) + "(%rbp)");
+            emit("movl " + intRegs[intRegCount++] + ", " + std::to_string(offset) + "(%rbp)");
         }
         else
         {
             // This parameter goes on stack
             int stackParamOffset = 16 + (stackParamsCount++ * 8);
-            emit("movq " + std::to_string(stackParamOffset) + "(%rbp), %rax");
-            emit("movq %rax, " + std::to_string(offset) + "(%rbp)");
+            emit("movl " + std::to_string(stackParamOffset) + "(%rbp), %eax");
+            emit("movl %eax, " + std::to_string(offset) + "(%rbp)");
         }
     }
 
@@ -402,19 +402,19 @@ void CodeGeneration::generateDeclaration(std::shared_ptr<DeclarationStatementNod
         }
 
         variableReg = std::to_string(offset) + "(" + tempReg + ")";
+        regTable.registerFree(tempReg); // Free the used register
     }
-
     // Global variable initialization
     switch (decl->getType())
     {
     case TypeKind::NUM:
-        emit("movl " + resultReg + ", " + variableReg);
+        emit("movl " + RegisterConverter::convertRegisterTo32Bit(resultReg) + ", " + variableReg);
         break;
     case TypeKind::REAL:
         emit("movss " + resultReg + ", " + variableReg);
         break;
     case TypeKind::BOOL:
-        emit("movb " + resultReg + "b, " + variableReg);
+        emit("movb " + RegisterConverter::convertRegisterToByte(resultReg) + ", " + variableReg);
         break;
     case TypeKind::TEXT:
         emit("movq " + resultReg + ", " + variableReg);
@@ -422,10 +422,6 @@ void CodeGeneration::generateDeclaration(std::shared_ptr<DeclarationStatementNod
     }
     
     regTable.registerFree(resultReg);
-    if (tempReg != "")
-    {
-        regTable.registerFree(tempReg);
-    }
 }
 
 void CodeGeneration::generateForStatement(std::shared_ptr<ForStatementNode> forNode)
@@ -457,7 +453,7 @@ void CodeGeneration::generateForStatement(std::shared_ptr<ForStatementNode> forN
 
     // Generate and check condition
     std::string condReg = generateExpression(forNode->getCondition());
-    emit("cmpl $0, " + condReg);
+    emit("cmpq $0, " + condReg);
     regTable.registerFree(condReg);
     emit("je " + doneLabel);
 
@@ -633,23 +629,26 @@ void CodeGeneration::generateReturn(std::shared_ptr<ReturnStatementNode> returnS
 std::string CodeGeneration::generateExpression(std::shared_ptr<ExpressionNode> expr)
 {
     std::string reg = "";
+    std::string reg32 = "";
     std::string reg2 = "";
     switch (expr->getExpressionVariant())
     {
     case ExpressionType::NUMBER:
         reg = regTable.registerAllocate();
-        emit("movl $" + std::to_string(std::dynamic_pointer_cast<NumberExpr>(expr)->getValue()) + ", " + reg);
+        reg32 = RegisterConverter::convertRegisterTo32Bit(reg);
+        emit("movl $" + std::to_string(std::dynamic_pointer_cast<NumberExpr>(expr)->getValue()) + ", " + reg32);
         break;
 
     case ExpressionType::REAL:
         // Allocating a GP register for the IEEE 754 Representation
         reg2 = regTable.registerAllocate();
+        reg32 = RegisterConverter::convertRegisterTo32Bit(reg2);
 
         // Allocating the final result register
         reg = regTable.floatRegisterAllocate();
 
-        emit("movl $" + std::to_string(floatToIEEE(std::dynamic_pointer_cast<RealExpr>(expr)->getValue())) + ", " + reg2);
-        emit("movl " + reg2 + ", " + reg);
+        emit("movl $" + std::to_string(floatToIEEE(std::dynamic_pointer_cast<RealExpr>(expr)->getValue())) + ", " + reg32);
+        emit("movl " + reg32 + ", " + reg);
 
         // We can free the temp register we used
         regTable.registerFree(reg2);
@@ -658,7 +657,9 @@ std::string CodeGeneration::generateExpression(std::shared_ptr<ExpressionNode> e
 
     case ExpressionType::BOOL:
         reg = regTable.registerAllocate();
-        emit("movb $" + std::to_string(std::dynamic_pointer_cast<BoolExpr>(expr)->getValue() ? 1 : 0) + ", " + reg);
+        reg32 = RegisterConverter::convertRegisterToByte(reg);
+
+        emit("movb $" + std::to_string(std::dynamic_pointer_cast<BoolExpr>(expr)->getValue() ? 1 : 0) + ", " + reg32);
         break;
 
     case ExpressionType::STRING:
@@ -675,13 +676,67 @@ std::string CodeGeneration::generateExpression(std::shared_ptr<ExpressionNode> e
         break;
 
     case ExpressionType::IDENTIFIER:
-        reg = regTable.registerAllocate();
-        emit("movl " + std::dynamic_pointer_cast<IdentifierExpr>(expr)->getName() + "(%rip), " + reg);
+    {
+        std::string variableReg = "";
+        std::string varName = std::dynamic_pointer_cast<IdentifierExpr>(expr)->getName();
+
+        // Get correct offset
+        auto [levelDiff, offset] = scopeManager.getVariableOffset(varName);
+
+        // Check if we're in global scope
+        if (levelDiff == -1)
+        {
+            variableReg = varName + "(%rip)";
+        }
+        else
+        {
+            std::string tempReg = "%rbp";
+
+            // Getting the variable offset from different scopes
+            if (levelDiff > 0)
+            {
+                tempReg = regTable.registerAllocate();
+                emit("movq %rbp, " + tempReg);
+
+                // Follow static chain up to the correct scope
+                for (int i = 0; i < levelDiff; i++)
+                {
+                    emit("movq (" + tempReg + "), " + tempReg);
+                }
+            }
+
+            variableReg = std::to_string(offset) + "(" + tempReg + ")";
+            regTable.registerFree(tempReg);
+        }
+
+        switch (std::dynamic_pointer_cast<IdentifierExpr>(expr)->getExpressionType())
+        {
+        case TypeKind::NUM:
+            reg = regTable.registerAllocate();
+            reg32 = RegisterConverter::convertRegisterTo32Bit(reg);
+            emit("movl " + variableReg + ", " + reg32);
+            break;
+        case TypeKind::REAL:
+            reg = regTable.floatRegisterAllocate();
+            emit("movss " + variableReg + ", " + reg);
+            break;
+        case TypeKind::BOOL:
+            reg = regTable.registerAllocate();
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("movb " + variableReg + ", " + reg32);
+            break;
+        case TypeKind::TEXT:
+            reg = regTable.registerAllocate();
+            emit("movq " + variableReg + ", " + reg);
+            break;
+        }
         break;
+    }
 
     case ExpressionType::NOT:
         reg = generateExpression(std::dynamic_pointer_cast<NotExpr>(expr)->getExpression());
-        emit("xorb $1, " + reg + "b"); // Toggle the boolean value
+        reg32 = RegisterConverter::convertRegisterToByte(reg);
+        emit("xorb $1, " + reg32); // Toggle the boolean value
         break;
 
     case ExpressionType::FUNC_CALL:
@@ -697,6 +752,7 @@ std::string CodeGeneration::generateExpression(std::shared_ptr<ExpressionNode> e
         TypeKind from = expr->getExpressionType();
         TypeKind to = expr->getTargetType();
         std::string newReg;
+        std::string reg32 = "";
 
         // Convert to bool
         if (to == TypeKind::BOOL)
@@ -704,17 +760,20 @@ std::string CodeGeneration::generateExpression(std::shared_ptr<ExpressionNode> e
             if (from == TypeKind::NUM)
             {
                 // Convert num to bool
-                emit("cmpl $0, " + reg);
-                emit("setne " + reg + "b");
-                emit("movzbq " + reg + "b, " + reg);
+                reg32 = RegisterConverter::convertRegisterTo32Bit(reg);
+                emit("cmpl $0, " + reg32);
+                reg32 = RegisterConverter::convertRegisterToByte(reg);
+                emit("setne " + reg32);
+                emit("movzbq " + reg32 + ", " + reg);
             }
             else if (from == TypeKind::REAL)
             {
                 std::string zeroReg = regTable.floatRegisterAllocate();
+                reg32 = RegisterConverter::convertRegisterToByte(reg32);
                 emit("xorps " + zeroReg + ", " + zeroReg); // Set Register to 0
                 emit("ucomiss " + zeroReg + ", " + reg); // Unordered compare float with 0
-                emit("setne " + reg + "b"); // Set to 1 if not equal
-                emit("movzbq " + reg + "b, " + reg); // Zero-extend to full register
+                emit("setne " + reg32); // Set to 1 if not equal
+                emit("movzbq " + reg32 + ", " + reg); // Zero-extend to full register
                 regTable.registerFree(zeroReg);
             }
             return reg;
@@ -726,7 +785,8 @@ std::string CodeGeneration::generateExpression(std::shared_ptr<ExpressionNode> e
             if (from == TypeKind::REAL)
             {
                 newReg = regTable.registerAllocate();
-                emit("cvttss2si " + reg + ", " + newReg); // cvt(convert) t(truncate) ss(single precision) si(signed int)
+                reg32 = RegisterConverter::convertRegisterTo32Bit(reg);
+                emit("cvttss2si " + reg + ", " + reg32); // cvt(convert) t(truncate) ss(single precision) si(signed int)
                 regTable.registerFree(reg);
                 reg = newReg;
             }
@@ -737,7 +797,8 @@ std::string CodeGeneration::generateExpression(std::shared_ptr<ExpressionNode> e
         if ((from == TypeKind::BOOL || from == TypeKind::NUM) && to == TypeKind::REAL)
         {
             newReg = regTable.floatRegisterAllocate();
-            emit("cvtsi2ss " + reg + ", " + newReg);  // Convert integer to float
+            reg32 = RegisterConverter::convertRegisterTo32Bit(reg);
+            emit("cvtsi2ss " + reg32 + ", " + newReg);  // Convert integer to float
             regTable.registerFree(reg);
             reg = newReg;
             return reg;
@@ -751,6 +812,8 @@ std::string CodeGeneration::generateBinaryExpr(std::shared_ptr<BinaryExpr> binEx
 {
     std::string reg = generateExpression(binExpr->getLeft());
     std::string rightReg = generateExpression(binExpr->getRight());
+    std::string reg32 = "";
+    std::string rightReg32 = "";
     
     // Both sides of the 
     switch (binExpr->getExpressionType())
@@ -759,64 +822,72 @@ std::string CodeGeneration::generateBinaryExpr(std::shared_ptr<BinaryExpr> binEx
     case TypeKind::BOOL:
     case TypeKind::NUM:
     {
+        reg32 = RegisterConverter::convertRegisterTo32Bit(reg);
+        rightReg32 = RegisterConverter::convertRegisterTo32Bit(rightReg);
         switch (binExpr->getType())
         {
         case BinaryExprType::ADD:
-            emit("addl " + rightReg + ", " + reg);
+            emit("addl " + rightReg32 + ", " + reg32);
             break;
 
         case BinaryExprType::SUB:
-            emit("subl " + rightReg + ", " + reg);
+            emit("subl " + rightReg32 + ", " + reg32);
             break;
 
         case BinaryExprType::MUL:
-            emit("imull " + rightReg + ", " + reg);
+            emit("imull " + rightReg32 + ", " + reg32);
             break;
 
         case BinaryExprType::DIV:
             emit("pushq %rdx");
-            emit("movl " + reg + ", %eax");
+            emit("movl " + reg32 + ", %eax");
             // Convert long to double long
             emit("cltd");
-            emit("idivl " + rightReg);
-            emit("movl %eax, " + reg);
+            emit("idivl " + rightReg32);
+            emit("movl %eax, " + reg32);
             emit("popq %rdx"); // Retrieve RDX
             break;
 
         case BinaryExprType::GREATER:
-            emit("cmpl " + rightReg + ", " + reg);
-            emit("setg " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            emit("cmpl " + rightReg32 + ", " + reg32);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("setg " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
 
         case BinaryExprType::GREATER_EQUAL:
-            emit("cmpl " + rightReg + ", " + reg);
-            emit("setge " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            emit("cmpl " + rightReg32 + ", " + reg32);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("setge " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
 
         case BinaryExprType::LESS:
-            emit("cmpl " + rightReg + ", " + reg);
-            emit("setl " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            emit("cmpl " + rightReg32 + ", " + reg32);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("setl " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
 
         case BinaryExprType::LESS_EQUAL:
-            emit("cmpl " + rightReg + ", " + reg);
-            emit("setle " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            emit("cmpl " + rightReg32 + ", " + reg32);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("setle " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
 
         case BinaryExprType::EQUAL_EQUAL:
-            emit("cmpl " + rightReg + ", " + reg);
-            emit("sete " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            emit("cmpl " + rightReg32 + ", " + reg32);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("sete " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
 
         case BinaryExprType::NOT_EQUAL:
-            emit("cmpl " + rightReg + ", " + reg);
-            emit("setne " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            emit("cmpl " + rightReg32 + ", " + reg32);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("setne " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
         }
         break;
@@ -840,33 +911,39 @@ std::string CodeGeneration::generateBinaryExpr(std::shared_ptr<BinaryExpr> binEx
             break;
         case BinaryExprType::GREATER:
             emit("ucomiss " + rightReg + ", " + reg);
-            emit("seta " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("seta " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
         case BinaryExprType::GREATER_EQUAL:
             emit("ucomiss " + rightReg + ", " + reg);
-            emit("setae " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("setae " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
         case BinaryExprType::LESS:
             emit("ucomiss " + reg + ", " + rightReg);
-            emit("seta " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("seta " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
         case BinaryExprType::LESS_EQUAL:
             emit("ucomiss " + reg + ", " + rightReg);
-            emit("setae " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("setae " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
         case BinaryExprType::EQUAL_EQUAL:
             emit("ucomiss " + rightReg + ", " + reg);
-            emit("sete " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("sete " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
         case BinaryExprType::NOT_EQUAL:
             emit("ucomiss " + rightReg + ", " + reg);
-            emit("setne " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("setne " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
         }
         break;
@@ -878,13 +955,15 @@ std::string CodeGeneration::generateBinaryExpr(std::shared_ptr<BinaryExpr> binEx
         {
         case BinaryExprType::EQUAL_EQUAL:
             emit("cmpq " + rightReg + ", " + reg);
-            emit("sete " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("sete " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
         case BinaryExprType::NOT_EQUAL:
             emit("cmpq " + rightReg + ", " + reg);
-            emit("setne " + reg + "b");
-            emit("movzbq " + reg + "b, " + reg);
+            reg32 = RegisterConverter::convertRegisterToByte(reg);
+            emit("setne " + reg32);
+            emit("movzbq " + reg32 + ", " + reg);
             break;
 	  default:
 		break;
@@ -986,7 +1065,8 @@ std::string CodeGeneration::generateFunctionCall(std::shared_ptr<FunctionCallExp
     emit("popq %r10");
 
     // Get return value into a new register based on return type
-    std::string reg;
+    std::string reg = "";
+    std::string reg32 = "";
     switch (funcExpr->getExpressionType())
     {
     case TypeKind::REAL:
@@ -999,7 +1079,8 @@ std::string CodeGeneration::generateFunctionCall(std::shared_ptr<FunctionCallExp
         break;
     default: // NUM, BOOL
         reg = regTable.registerAllocate();
-        emit("movl %eax, " + reg);
+        reg32 = RegisterConverter::convertRegisterTo32Bit(reg);
+        emit("movl %eax, " + reg32);
         break;
     }
     return reg;
@@ -1007,6 +1088,7 @@ std::string CodeGeneration::generateFunctionCall(std::shared_ptr<FunctionCallExp
 
 void CodeGeneration::generateNumberOut(std::string reg)
 {
+    std::string reg32 = RegisterConverter::convertRegisterTo32Bit(reg);
     // Convert number to string
     // Reserve 12 bytes on stack for number string (10 digits + sign + null)
     emit("subq $16, %rsp");  // Align to 16 bytes
@@ -1021,7 +1103,7 @@ void CodeGeneration::generateNumberOut(std::string reg)
     emit("pushq %r9");
 
     // Move number to process
-    emit("movl " + reg + ", %eax");
+    emit("movl " + reg32 + ", %eax");
     emit("movq %rsi, %rsp");          // Get stack pointer
     emit("addq $71, %rsi");           // Skip saved registers to reach our buffer And the 16 byte buffer
     emit("movq %rsi, %rdi");          // Start at the end for digit conversion
@@ -1039,7 +1121,7 @@ void CodeGeneration::generateNumberOut(std::string reg)
     emit("jnz " + convertLoop);
 
     // Handle negative numbers after digits
-    emit("testl " + reg + ", " + reg);
+    emit("testl " + reg32 + ", " + reg32);
     std::string notNegative = createLabel();
     emit("jns " + notNegative);
     emit("movb $45, (%rsi)");         // Store '-' at current position
@@ -1104,7 +1186,8 @@ void CodeGeneration::generateFloatOut(std::string reg)
 {
     // Get the integer part using truncation
     std::string intReg = regTable.registerAllocate();
-    emit("cvttss2si " + reg + ", " + intReg);
+    std::string intReg32 = RegisterConverter::convertRegisterTo32Bit(intReg);
+    emit("cvttss2si " + reg + ", " + intReg32);
 
     // Print the integer part 
     generateNumberOut(intReg);
@@ -1145,10 +1228,11 @@ void CodeGeneration::generateFloatOut(std::string reg)
 
     // Convert to integer
     std::string decimalReg = regTable.registerAllocate();
-    emit("cvtss2si " + reg + ", " + decimalReg);
+    std::string decimalReg32 = RegisterConverter::convertRegisterTo32Bit(decimalReg);
+    emit("cvtss2si " + reg + ", " + decimalReg32);
 
     // Ensure positive (in case of negative numbers, we already handled sign in integer part)
-    emit("andl $0x7FFFFFFF, " + decimalReg);
+    emit("andl $0x7FFFFFFF, " + decimalReg32);
 
     // Print the three decimal digits, handling leading zeros
     generateNumberOut(decimalReg);

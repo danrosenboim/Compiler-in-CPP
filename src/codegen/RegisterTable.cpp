@@ -79,14 +79,6 @@ void RegisterTable::addRegisters()
 void RegisterTable::addFloatRegisters()
 {
 	// Adding all the xmm registers that could be used
-	floatRegisters.insert(std::make_pair("%xmm0", false));
-	floatRegisters.insert(std::make_pair("%xmm1", false));
-	floatRegisters.insert(std::make_pair("%xmm2", false));
-	floatRegisters.insert(std::make_pair("%xmm3", false));
-	floatRegisters.insert(std::make_pair("%xmm4", false));
-	floatRegisters.insert(std::make_pair("%xmm5", false));
-	floatRegisters.insert(std::make_pair("%xmm6", false));
-	floatRegisters.insert(std::make_pair("%xmm7", false));
 	floatRegisters.insert(std::make_pair("%xmm8", false));
 	floatRegisters.insert(std::make_pair("%xmm9", false));
 	floatRegisters.insert(std::make_pair("%xmm10", false));

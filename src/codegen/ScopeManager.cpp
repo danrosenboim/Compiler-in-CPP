@@ -40,12 +40,15 @@ int ScopeManager::addVariable(const std::string& varName)
     }
 
     auto& currentScope = scopeChain.back();
-    currentScope.currentOffset -= 8; // Go down by 8 bytes
-
-    // Check if we exceeded allocated space
-    if (-currentScope.currentOffset > currentScope.allocatedSize)
+    if (currentScopeLevel) // If the scope is not in the global scope
     {
-        throw CodeGenExceededAllocatedStackSpace();
+        currentScope.currentOffset -= 8; // Go down by 8 bytes
+
+        // Check if we exceeded allocated space
+        if (-currentScope.currentOffset > currentScope.allocatedSize)
+        {
+            throw CodeGenExceededAllocatedStackSpace();
+        }
     }
 
     currentScope.variables[varName] = currentScope.currentOffset;
@@ -66,6 +69,13 @@ std::pair<int, int> ScopeManager::getVariableOffset(const std::string& varName)
     // Search from innermost to outermost scope
     for (auto it = scopeChain.rbegin(); it != scopeChain.rend(); ++it)
     {
+        // Global variables
+        if (!it->scopeLevel)
+        {
+            return { -1, 0 };
+        }
+
+        // Find correct variable
         auto varIt = it->variables.find(varName);
         if (varIt != it->variables.end())
         {

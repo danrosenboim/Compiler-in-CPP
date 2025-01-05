@@ -6,6 +6,7 @@
 #include <sstream>
 #include "RegisterTable.h"
 #include "ScopeManager.h"
+#include "RegisterConverter.h"
 #include "../parser/nodes/ProgramNode.h"
 #include "../parser/nodes/AssignmentStatementNode.h"
 #include "../parser/nodes/BinaryExpr.h"

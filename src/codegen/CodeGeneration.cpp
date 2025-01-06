@@ -82,7 +82,7 @@ void CodeGeneration::generateStringLiterals()
     for (const auto& [str, label] : stringLiterals)
     {
         emit(label + ":");
-        emit(".string \"" + str + "\"");
+        emit(".string " + str + "");
         emit(".align 8");
     }
 }
@@ -1131,6 +1131,7 @@ void CodeGeneration::generateNumberOut(std::string reg)
     // Calculate string length
     emit("movq %rdi, %rdx");   // End of buffer
     emit("subq %rsi, %rdx");   // Calculate length
+    emit("incq %rsi");
 
     // Write to stdout everything else is already in the correct location
     emit("movq $1, %rax");     // sys_write

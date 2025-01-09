@@ -529,21 +529,22 @@ void CodeGeneration::generateOutStatement(std::shared_ptr<OutStatementNode> outN
     case TypeKind::BOOL:
     {
         // Add string literals for "true" and "false"
-        std::string trueLabel = addStringLiteral("true\n");
-        std::string falseLabel = addStringLiteral("false\n");
+        std::string trueLabel = addStringLiteral("\"true\"");
+        std::string falseLabel = addStringLiteral("\"false\"");
 
+        std::string resultReg32 = RegisterConverter::convertRegisterToByte(resultReg32);
         std::string printFalse = createLabel();
         std::string endPrint = createLabel();
 
         // Test the boolean value
-        emit("testb " + resultReg + "b, " + resultReg + "b");
+        emit("testb " + resultReg32 + ", " + resultReg32);
         emit("jz " + printFalse);
 
         // Print "true"
         emit("movq $1, %rax");      // sys_write
         emit("movq $1, %rdi");      // stdout
         emit("leaq " + trueLabel + "(%rip), %rsi");
-        emit("movq $5, %rdx");      // length = 5 ("true\n")
+        emit("movq $4, %rdx");      // length = 5 ("true")
         emit("syscall");
         emit("jmp " + endPrint);
 
@@ -552,7 +553,7 @@ void CodeGeneration::generateOutStatement(std::shared_ptr<OutStatementNode> outN
         emit("movq $1, %rax");      // sys_write
         emit("movq $1, %rdi");      // stdout
         emit("leaq " + falseLabel + "(%rip), %rsi");
-        emit("movq $6, %rdx");      // length = 6 ("false\n")
+        emit("movq $5, %rdx");      // length = 6 ("false")
         emit("syscall");
 
         emit(endPrint + ":");

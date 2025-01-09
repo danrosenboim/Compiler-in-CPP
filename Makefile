@@ -12,7 +12,7 @@ OBJECTS = $(SOURCES:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
 TARGET = compiler
 
 # Function names
-.PHONY: all clean directories
+.PHONY: all run clean directories
 
 all: directories $(TARGET)
 
@@ -24,6 +24,10 @@ $(TARGET): $(OBJECTS)
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+run:
+	@./compiler
+	@gcc -o output output.s
+	./output
 
 directories:
 	@mkdir -p $(dir $(OBJECTS))

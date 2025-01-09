@@ -450,7 +450,7 @@ std::shared_ptr<ExpressionNode> Parser::parseFactor()
 		strExpr = std::make_shared<StringExpr>(currentToken.getLineNumber(), currentToken.getLexeme());
 		advance();
 		return strExpr;
-	case TokenType::BOOL:
+	case TokenType::BOOLEAN:
 		boolExpr = std::make_shared<BoolExpr>(currentToken.getLineNumber(), currentToken.getBool());
 		advance();
 		return boolExpr;

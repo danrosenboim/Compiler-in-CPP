@@ -47,8 +47,8 @@ void CodeGeneration::generate(std::shared_ptr<ProgramNode> head)
     emit("mov $0, %rdi"); // exit status 0
     emit("syscall");
 
-    emit(".section rodata");
-    emit(".align 4");
+    emit(".section .rodata");
+    emit(".align 8");
     emit(".float_1000:");
     emit(".long 0x447A0000");  // IEEE 754 representation of 1000
 
@@ -81,9 +81,9 @@ void CodeGeneration::generateStringLiterals()
 
     for (const auto& [str, label] : stringLiterals)
     {
+        emit(".align 8");
         emit(label + ":");
         emit(".string " + str + "");
-        emit(".align 8");
     }
 }
 
@@ -143,6 +143,8 @@ void CodeGeneration::generateGlobal(std::shared_ptr<Symbol> symbol)
 
 void CodeGeneration::generateFunction(std::shared_ptr<FunctionNode> func)
 {
+    functionEndings[func->getName()] = createLabel(); // Create ending label for return statements
+
     // Generate function label
     emit(".globl " + func->getName());
     emit(func->getName() + ":");
@@ -207,7 +209,7 @@ void CodeGeneration::generateFunction(std::shared_ptr<FunctionNode> func)
         // Filling up 6 general purpose registers
         if (intRegCount < 6)
         {
-            emit("movl " + intRegs[intRegCount++] + ", " + std::to_string(offset) + "(%rbp)");
+            emit("movl " + RegisterConverter::convertRegisterTo32Bit(intRegs[intRegCount++]) + ", " + std::to_string(offset) + "(%rbp)");
         }
         else
         {
@@ -222,8 +224,7 @@ void CodeGeneration::generateFunction(std::shared_ptr<FunctionNode> func)
     generateBlock(func->getBody(), false);
 
     // Function ending label for returns
-    std::string endingLabel = createLabel();
-    emit(endingLabel + ":");
+    emit(functionEndings[func->getName()] + ":");
 
     // Restore callee-saved registers
     emit("popq %r15");
@@ -237,8 +238,7 @@ void CodeGeneration::generateFunction(std::shared_ptr<FunctionNode> func)
     emit("popq %rbp");
     emit("ret");
 
-    // Store ending label for use in return statements
-    functionEndings[func->getName()] = endingLabel;
+    scopeManager.exitScope(); // Exit current scope
 }
 
 void CodeGeneration::generateBlock(std::shared_ptr<BlockNode> block, bool enterScope)
@@ -343,13 +343,13 @@ void CodeGeneration::generateAssignment(std::shared_ptr<AssignmentStatementNode>
     switch (assignment->getExpression()->getExpressionType())
     {
     case TypeKind::NUM:
-        emit("movl " + resultReg + ", " + variableReg);
+        emit("movl " + RegisterConverter::convertRegisterTo32Bit(resultReg) + ", " + variableReg);
         break;
     case TypeKind::REAL:
         emit("movss " + resultReg + ", " + variableReg);
         break;
     case TypeKind::BOOL:
-        emit("movb " + resultReg + "b, " + variableReg);
+        emit("movb " + RegisterConverter::convertRegisterToByte(resultReg) + ", " + variableReg);
         break;
     case TypeKind::TEXT:
         emit("movq " + resultReg + ", " + variableReg);
@@ -441,7 +441,7 @@ void CodeGeneration::generateForStatement(std::shared_ptr<ForStatementNode> forN
     // Get initialization expression into a register and store it
     std::string initReg = generateExpression(forNode->getInitExpr());
     auto [levelDiff, offset] = scopeManager.getVariableOffset(forNode->getVariableName()); // Level diff is equal to 0 because were still in the same scope
-    emit("movl " + initReg + ", " + std::to_string(offset) + "(%rbp)");
+    emit("movl " + RegisterConverter::convertRegisterTo32Bit(initReg) + ", " + std::to_string(offset) + "(%rbp)");
     regTable.registerFree(initReg);
 
     // Create loop and end label
@@ -532,7 +532,7 @@ void CodeGeneration::generateOutStatement(std::shared_ptr<OutStatementNode> outN
         std::string trueLabel = addStringLiteral("\"true\"");
         std::string falseLabel = addStringLiteral("\"false\"");
 
-        std::string resultReg32 = RegisterConverter::convertRegisterToByte(resultReg32);
+        std::string resultReg32 = RegisterConverter::convertRegisterToByte(resultReg);
         std::string printFalse = createLabel();
         std::string endPrint = createLabel();
 
@@ -569,12 +569,15 @@ void CodeGeneration::generateOutStatement(std::shared_ptr<OutStatementNode> outN
 
         // Calculate string length (find null terminator)
         emit("xorq %rdx, %rdx");    // Clear length counter
+        std::string endLoop = createLabel();
         std::string lengthLoop = createLabel();
         emit(lengthLoop + ":");
         emit("cmpb $0, (%rsi, %rdx)");  // Check for null terminator
-        emit("je " + createLabel());     // Exit if found
+        emit("je " + endLoop);     // Exit if found
         emit("incq %rdx");              // Increment length
         emit("jmp " + lengthLoop);
+
+        emit(endLoop + ":");
 
         // Print the string
         emit("syscall");
@@ -610,7 +613,7 @@ void CodeGeneration::generateReturn(std::shared_ptr<ReturnStatementNode> returnS
     {
     case TypeKind::NUM:
     case TypeKind::BOOL:
-        emit("movl " + resultReg + ", %eax");
+        emit("movl " + RegisterConverter::convertRegisterTo32Bit(resultReg) + ", %eax");
         break;
     case TypeKind::REAL:
         emit("movss " + resultReg + ", %xmm0");
@@ -1105,8 +1108,7 @@ void CodeGeneration::generateNumberOut(std::string reg)
 
     // Move number to process
     emit("movl " + reg32 + ", %eax");
-    emit("movq %rsi, %rsp");          // Get stack pointer
-    emit("addq $71, %rsi");           // Skip saved registers to reach our buffer And the 16 byte buffer
+    emit("leaq 71(%rsp), %rsi");   // Point to our buffer space
     emit("movq %rsi, %rdi");          // Start at the end for digit conversion
 
     // Convert digits from right to left
@@ -1163,8 +1165,7 @@ void CodeGeneration::generateNewLineOut()
     emit("pushq %rdx");
 
     // Store newline character on stack
-    emit("movq %rsp, %rsi");
-    emit("addq $32, %rsi");      // Skip over saved registers
+    emit("leaq 32(%rsp), %rsi");   // Point to our buffer space
     emit("movb $10, (%rsi)");    // ASCII 10 is newline
 
     // Write syscall
@@ -1186,6 +1187,10 @@ void CodeGeneration::generateNewLineOut()
 
 void CodeGeneration::generateFloatOut(std::string reg)
 {
+    // Save original float value
+    std::string originalFloatReg = regTable.floatRegisterAllocate();
+    emit("movss " + reg + ", " + originalFloatReg);
+
     // Get the integer part using truncation
     std::string intReg = regTable.registerAllocate();
     std::string intReg32 = RegisterConverter::convertRegisterTo32Bit(intReg);
@@ -1219,27 +1224,25 @@ void CodeGeneration::generateFloatOut(std::string reg)
     emit("popq %rax");
     emit("addq $16, %rsp");
 
-    // Now handle decimal part
-    // Convert integer back to float and subtract from original to get just decimal part
-    std::string tempFloatReg = regTable.floatRegisterAllocate();
-    emit("cvtsi2ss " + intReg + ", " + tempFloatReg);    // Convert back to float
-    emit("subss " + tempFloatReg + ", " + reg);          // Get just decimal part
-
-    // Multiply by 1000 to get 3 decimal places
-    emit("mulss .float_1000(%rip), " + reg);
+    // Multiply by 1000
+    emit("mulss .float_1000(%rip), " + originalFloatReg);
 
     // Convert to integer
     std::string decimalReg = regTable.registerAllocate();
     std::string decimalReg32 = RegisterConverter::convertRegisterTo32Bit(decimalReg);
-    emit("cvtss2si " + reg + ", " + decimalReg32);
+    emit("cvttss2si " + originalFloatReg + ", " + decimalReg32);
 
-    // Ensure positive (in case of negative numbers, we already handled sign in integer part)
-    emit("andl $0x7FFFFFFF, " + decimalReg32);
+    // Get modulo 1000 of the result
+    emit("movl " + decimalReg32 + ", %eax");
+    emit("movl $1000, %ecx");
+    emit("cdq");                    // Sign-extend eax into edx
+    emit("idivl %ecx");            // Divide edx:eax by ecx
+    emit("movl %edx, " + decimalReg32);  // Remainder (modulo) goes to edx
 
-    // Print the three decimal digits, handling leading zeros
+    // Print the decimal digits (now should be exactly 3 digits)
     generateNumberOut(decimalReg);
 
     // Clean up registers
-    regTable.registerFree(tempFloatReg);
     regTable.registerFree(decimalReg);
+    regTable.registerFree(originalFloatReg);
 }

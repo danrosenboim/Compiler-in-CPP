@@ -6,6 +6,7 @@ ExpressionNode::ExpressionNode(int lineNumber) : Node(lineNumber), needsConversi
 
 void ExpressionNode::markForConversion(TypeKind target)
 {
+	needsConversion = true;
 	targetType = target;
 }
 

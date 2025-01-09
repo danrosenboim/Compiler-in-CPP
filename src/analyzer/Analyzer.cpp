@@ -21,8 +21,11 @@ void Analyzer::analyze(std::shared_ptr<ProgramNode> programNode)
 	// We do this in this order because the statements may use functions
 	for (auto& func : programNode->getFunctions())
 	{
+		currentFunctionName = func->getName();
 		analyzeFunction(func);
 	}
+
+	currentFunctionName = "";
 
 	for (auto& statement : programNode->getStatements())
 	{
@@ -321,7 +324,7 @@ void Analyzer::analyzeOut(std::shared_ptr<OutStatementNode> outNode)
 void Analyzer::analyzeReturn(std::shared_ptr<ReturnStatementNode> returnNode)
 {
 	// Make sure the return is in a scope
-	if (currentFunctionName != "")
+	if (currentFunctionName == "")
 	{
 		throw AnalyzerCannotReturnInGlobal(returnNode->getLineNumber());
 	}

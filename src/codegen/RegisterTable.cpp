@@ -3,6 +3,7 @@
 RegisterTable::RegisterTable()
 {
 	addRegisters();
+	addFloatRegisters();
 }
 
 std::string RegisterTable::registerAllocate()

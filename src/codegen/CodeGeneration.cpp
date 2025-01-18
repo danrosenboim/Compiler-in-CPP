@@ -293,6 +293,8 @@ void CodeGeneration::generateStatement(std::shared_ptr<StatementNode> statement)
         generateIfStatement(std::dynamic_pointer_cast<IfStatementNode>(statement));
         break;
     case StatementType::IN:
+        generateInStatement(std::dynamic_pointer_cast<InStatementNode>(statement));
+        break;
     case StatementType::OUT:
         generateOutStatement(std::dynamic_pointer_cast<OutStatementNode>(statement));
         break;
@@ -511,6 +513,121 @@ void CodeGeneration::generateIfStatement(std::shared_ptr<IfStatementNode> ifNode
     }
 
     emit(doneLabel + ":");
+}
+
+void CodeGeneration::generateInStatement(std::shared_ptr<InStatementNode> inNode)
+{
+    // Reserve stack space for input buffer (16 bytes for alignment)
+    emit("subq $32, %rsp");
+
+    // Save registers we'll use
+    emit("pushq %rax");
+    emit("pushq %rbp");
+    emit("pushq %rcx");
+    emit("pushq %rdx");
+    emit("pushq %rdi");
+    emit("pushq %rsi");
+    emit("pushq %r8");
+    emit("pushq %r9");
+
+    // Read input from stdin
+    emit("movq $0, %rax");      // sys_read
+    emit("movq $0, %rdi");      // stdin
+    emit("leaq 60(%rsp), %rsi"); // Buffer at [rsp + saved regs]
+    emit("movq $16, %rdx");     // Read up to 16 bytes
+    emit("syscall");
+
+    // Initialize registers
+    emit("xorl %eax, %eax");     // Clear result
+    emit("xorl %ecx, %ecx");     // Clear sign flag
+    emit("leaq 60(%rsp), %rsi"); // Point to start of buffer
+
+    // Check first character
+    emit("movb (%rsi), %dl");
+    emit("cmpb $45, %dl");       // Check for minus sign
+
+    std::string invalidInput = createLabel();
+    std::string processLoop = createLabel();
+    std::string endNumber = createLabel();
+
+    emit("jne " + processLoop); // If not minus, check if it's first digit
+    emit("movl $1, %ecx");       // Set sign flag
+    emit("incq %rsi");           // Move past minus
+
+    // Main processing loop
+
+    emit(processLoop + ":");
+    emit("movb (%rsi), %dl");
+    emit("cmpb $10, %dl");       // Check for newline
+    emit("je " + endNumber);
+
+    // Validate digit
+    emit("cmpb $48, %dl");       // Compare with '0'
+    emit("jl " + invalidInput);
+    emit("cmpb $57, %dl");       // Compare with '9'
+    emit("jg " + invalidInput);
+
+    // Add digit to result
+    emit("subb $48, %dl");       // Convert ASCII to number
+    emit("imull $10, %eax");     // Multiply current result by 10
+    emit("movsbl %dl, %edx");    // Sign extend digit
+    emit("addl %edx, %eax");     // Add new digit
+
+    emit("incq %rsi");
+    emit("jmp " + processLoop);
+
+    // Handle invalid input
+    emit(invalidInput + ":");
+    emit("movq $60, %rax");      // sys_exit syscall
+    emit("movq $1, %rdi");       // Exit code 1
+    emit("syscall");
+
+    // Finalize number
+    emit(endNumber + ":");
+    emit("testl %ecx, %ecx");    // Check sign flag
+    std::string storeResult = createLabel();
+    emit("je " + storeResult);
+    emit("negl %eax");           // Apply negative if needed
+
+    // Store result in variable
+    emit(storeResult + ":");
+    auto [levelDiff, offset] = scopeManager.getVariableOffset(inNode->getIdentifier());
+
+    if (levelDiff == -1)
+    {
+        emit("movl %eax, " + inNode->getIdentifier() + "(%rip)");
+    }
+    else
+    {
+        std::string baseReg = "%rbp";
+        if (levelDiff > 0)
+        {
+            std::string tempReg = regTable.registerAllocate();
+            emit("movq %rbp, " + tempReg);
+            for (int i = 0; i < levelDiff; i++)
+            {
+                emit("movq (" + tempReg + "), " + tempReg);
+            }
+            baseReg = tempReg;
+        }
+        emit("movl %eax, " + std::to_string(offset) + "(" + baseReg + ")");
+        if (levelDiff > 0)
+        {
+            regTable.registerFree(baseReg);
+        }
+    }
+
+    // Restore registers
+    emit("popq %r9");
+    emit("popq %r8");
+    emit("popq %rsi");
+    emit("popq %rdi");
+    emit("popq %rdx");
+    emit("popq %rcx");
+    emit("popq %rbp");
+    emit("popq %rax");
+
+    emit("addq $32, %rsp");    // Restore stack
 }
 
 void CodeGeneration::generateOutStatement(std::shared_ptr<OutStatementNode> outNode)

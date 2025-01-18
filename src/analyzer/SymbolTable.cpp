@@ -1,27 +1,27 @@
 #include "SymbolTable.h"
 
-SymbolTable::SymbolTable() : ordinalPos(0)
-{
-	// First element for global scope
-	symbolTableStack.emplace_back();
-}
+SymbolTable::SymbolTable() : scopesEntered(-1)
+{ }
 
 void SymbolTable::enterScope()
 {
-	++ordinalPos;
+	++scopesEntered;
 	symbolTableStack.emplace_back();
 }
 
-void SymbolTable::exitScope()
+std::unordered_map<std::string, std::shared_ptr<Symbol>> SymbolTable::exitScope()
 {
-	ordinalPos--;
-	// Remove the latest element
+	--scopesEntered;
+	std::unordered_map<std::string, std::shared_ptr<Symbol>> retValue = symbolTableStack.back();
 	symbolTableStack.pop_back();
+
+	// Return the latest element
+	return retValue;
 }
 
 int SymbolTable::getScopeLevel() const
 {
-	return ordinalPos;
+	return scopesEntered;
 }
 
 
@@ -54,5 +54,20 @@ std::shared_ptr<Symbol> SymbolTable::currentScopeLookup(const std::string& name)
 	}
 
 	return nullptr;
+}
+
+int SymbolTable::getLatestSize() const
+{
+	int size = 0;
+	// Loop through the vector backwards
+	for (const auto& elem : symbolTableStack.back())
+	{
+		if (elem.second->functionNode == nullptr)
+		{
+			size++;
+		}
+	}
+
+	return size;
 }
 

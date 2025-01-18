@@ -8,10 +8,10 @@ Parser::Parser(std::shared_ptr<Lexer> scanner) : scanner(scanner), currentToken(
 
 
 // Program -> ( Function | Statement )*
-std::unique_ptr<ProgramNode> Parser::parseProgram()
+std::shared_ptr<ProgramNode> Parser::parseProgram()
 {
 	// Setting up AST head
-	auto programHead = std::make_unique<ProgramNode>(0);
+	auto programHead = std::make_shared<ProgramNode>(0);
 
 	// Continue parsing the program until its over
 	while(currentToken.getTag() != TokenType::END_OF_FILE)
@@ -450,7 +450,7 @@ std::shared_ptr<ExpressionNode> Parser::parseFactor()
 		strExpr = std::make_shared<StringExpr>(currentToken.getLineNumber(), currentToken.getLexeme());
 		advance();
 		return strExpr;
-	case TokenType::BOOL:
+	case TokenType::BOOLEAN:
 		boolExpr = std::make_shared<BoolExpr>(currentToken.getLineNumber(), currentToken.getBool());
 		advance();
 		return boolExpr;

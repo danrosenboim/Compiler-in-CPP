@@ -38,7 +38,7 @@ public:
 	Inputs: none
 	Outputs: head of the AST tree
 	*/
-	std::unique_ptr<ProgramNode> parseProgram();
+	std::shared_ptr<ProgramNode> parseProgram();
 
 private:
 	// Scanner that will return tokens on demand

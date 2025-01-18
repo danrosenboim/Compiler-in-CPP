@@ -31,7 +31,7 @@ public:
 	Inputs: the head output node
 	Outputs: none
 	*/
-	void analyze(std::unique_ptr<ProgramNode> programNode);
+	void analyze(std::shared_ptr<ProgramNode> programNode);
 	
 private:
 	// Symbol table to keep track of all the variables and functions
@@ -40,6 +40,9 @@ private:
 	// Instead of passing this variable around we can keep track of the current function were in using
 	// this variable.
 	TypeKind currentFunctionReturnType;
+
+	// Current function name
+	std::string currentFunctionName = "";
 
 	/*
 	 * Checks if one type can convert to the other

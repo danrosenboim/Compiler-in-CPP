@@ -4,6 +4,11 @@ BoolExpr::BoolExpr(int lineNumber, bool value) : ExpressionNode(lineNumber), val
 {
 }
 
+bool BoolExpr::getValue() const
+{
+    return value;
+}
+
 ExpressionType BoolExpr::getExpressionVariant() const
 {
     return ExpressionType::BOOL;

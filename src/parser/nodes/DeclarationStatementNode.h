@@ -3,6 +3,7 @@
 #include "Node.h"
 #include "ExpressionNode.h"
 #include "StatementNode.h"
+#include "../../analyzer/Symbol.h"
 
 class DeclarationStatementNode : public StatementNode
 {

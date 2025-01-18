@@ -2,6 +2,7 @@
 #include "Node.h"
 #include "StatementNode.h"
 #include "ExpressionNode.h"
+#include "AssignmentStatementNode.h"
 #include "BlockNode.h"
 
 class ForStatementNode : public StatementNode

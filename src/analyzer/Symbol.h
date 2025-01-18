@@ -1,7 +1,9 @@
 #pragma once
 #include <string>
+#include <memory>
 #include "../parser/nodes/TypeKind.h"
 #include "../parser/nodes/FunctionNode.h"
+#include "../parser/nodes/DeclarationStatementNode.h"
 
 enum class SymbolType
 {
@@ -10,8 +12,9 @@ enum class SymbolType
 };
 
 // SymbolTable entry
-struct Symbol
+class Symbol
 {
+public:
 	Symbol();
 	Symbol(SymbolType type, TypeKind varType, std::string varName, int ordinalPos);
 
@@ -20,5 +23,6 @@ struct Symbol
 	std::string varName;
 	int ordinalPos;
 	std::shared_ptr<FunctionNode> functionNode;
+	std::shared_ptr<DeclarationStatementNode> declarationNode;
 
 };

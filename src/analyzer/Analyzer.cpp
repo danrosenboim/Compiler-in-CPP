@@ -1,28 +1,46 @@
 #include "Analyzer.h"
 
-Analyzer::Analyzer() : symbolTable(std::make_unique<SymbolTable>()), currentFunctionReturnType(TypeKind::NUM)
+Analyzer::Analyzer() : symbolTable(std::make_unique<SymbolTable>()), currentFunctionReturnType(TypeKind::NUM), currentFunctionName("")
 {
 }
 
-void Analyzer::analyze(std::unique_ptr<ProgramNode> programNode)
+void Analyzer::analyze(std::shared_ptr<ProgramNode> programNode)
 {
+	symbolTable->enterScope();
+
 	// Loop through all the function declarations and add them
 	for (auto& func : programNode->getFunctions())
 	{
+		currentFunctionName = func->getName();
 		registerFunction(func);
 	}
+
+	currentFunctionName = "";
 
 	// Now we can loop over the funcitons and then the statements
 	// We do this in this order because the statements may use functions
 	for (auto& func : programNode->getFunctions())
 	{
+		currentFunctionName = func->getName();
 		analyzeFunction(func);
 	}
+
+	currentFunctionName = "";
 
 	for (auto& statement : programNode->getStatements())
 	{
 		analyzeStatement(statement);
 	}
+
+	// Add global declarations to program node
+	for (const auto& declaration : symbolTable->exitScope())
+	{
+		if (declaration.second->declarationNode != nullptr)
+		{
+			programNode->addDeclaration(declaration.second);
+		}
+	}
+
 }
 
 bool Analyzer::canConvert(TypeKind from, TypeKind to)
@@ -112,23 +130,26 @@ void Analyzer::analyzeFunction(std::shared_ptr<FunctionNode> func)
 	// Register parameters
 	for (const auto& param : func->getParameters())
 	{
-		Symbol paramSymbol(SymbolType::PARAM, param->getType(), param->getIdentifier(), symbolTable->getScopeLevel());
+		Symbol paramSymbol(SymbolType::PARAM, param->getType(), param->getIdentifier(), symbolTable->getLatestSize() + 1);
 		symbolTable->addEntryToLatest(paramSymbol);
 	}
 
 	// Loop through the statements and analyze them
 	analyzeBlock(func->getBody());
-
-	symbolTable->exitScope();
 }
 
 void Analyzer::analyzeBlock(std::shared_ptr<BlockNode> block)
 {
-
 	// Loop through the statements and analyze them
 	for (auto& stmt : block->getStatements())
 	{
 		analyzeStatement(stmt);
+	}
+
+	// Adding all the symbols to the block
+	for (const auto& dcl : symbolTable->exitScope())
+	{
+		block->addDeclaration(dcl.second);
 	}
 }
 
@@ -200,7 +221,8 @@ void Analyzer::analyzeDeclaration(std::shared_ptr<DeclarationStatementNode> decl
 
 	// Add to symbol table
 	Symbol varSymbol((symbolTable->getScopeLevel() == 0) ? SymbolType::GLOBAL : SymbolType::LOCAL, declaration->getType(),
-		declaration->getIdentifier(), symbolTable->getScopeLevel());
+		declaration->getIdentifier(), symbolTable->getLatestSize() + 1);
+	varSymbol.declarationNode = declaration;
 
 	symbolTable->addEntryToLatest(varSymbol);
 
@@ -254,8 +276,6 @@ void Analyzer::analyzeFor(std::shared_ptr<ForStatementNode> forNode)
 
 	// Analyze the loop body
 	analyzeBlock(forNode->getBody());
-
-	symbolTable->exitScope();
 }
 
 void Analyzer::analyzeIf(std::shared_ptr<IfStatementNode> ifNode)
@@ -273,14 +293,12 @@ void Analyzer::analyzeIf(std::shared_ptr<IfStatementNode> ifNode)
 
 	symbolTable->enterScope();
 	analyzeBlock(ifNode->getBody());
-	symbolTable->exitScope();
 
 	// Analyzing the else block part
 	if (ifNode->getElseBlock())
 	{
 		symbolTable->enterScope();
 		analyzeBlock(ifNode->getElseBlock());
-		symbolTable->exitScope();
 	}
 }
 
@@ -292,6 +310,10 @@ void Analyzer::analyzeIn(std::shared_ptr<InStatementNode> inNode)
 	{
 		throw AnalyzerUndefinedVariable(inNode->getIdentifier(), inNode->getLineNumber());
 	}
+	if (varSymbol->varType == TypeKind::TEXT || varSymbol->varType == TypeKind::REAL)
+	{
+		throw AnalyzerCannotConvert(typeKindToString(varSymbol->varType), typeKindToString(TypeKind::NUM), inNode->getLineNumber());
+	}
 }
 
 void Analyzer::analyzeOut(std::shared_ptr<OutStatementNode> outNode)
@@ -302,12 +324,13 @@ void Analyzer::analyzeOut(std::shared_ptr<OutStatementNode> outNode)
 void Analyzer::analyzeReturn(std::shared_ptr<ReturnStatementNode> returnNode)
 {
 	// Make sure the return is in a scope
-	if (symbolTable->getScopeLevel() == 0)
+	if (currentFunctionName == "")
 	{
 		throw AnalyzerCannotReturnInGlobal(returnNode->getLineNumber());
 	}
 
 	TypeKind returnType = analyzeExpression(returnNode->getExpression());
+	returnNode->setFunctionName(currentFunctionName);
 
 	// Check if return type matches function's declared return type
 	if (!canConvert(returnType, currentFunctionReturnType))
@@ -330,22 +353,33 @@ TypeKind Analyzer::analyzeExpression(std::shared_ptr<ExpressionNode> expression)
 	switch (expression->getExpressionVariant())
 	{
 	case ExpressionType::BINARY:
-		return analyzeBinaryExpression(std::dynamic_pointer_cast<BinaryExpr>(expression));
+		resultType = analyzeBinaryExpression(std::dynamic_pointer_cast<BinaryExpr>(expression));
+		break;
 
 	case ExpressionType::NOT:
-		return analyzeNot(std::dynamic_pointer_cast<NotExpr>(expression));
+		resultType = analyzeNot(std::dynamic_pointer_cast<NotExpr>(expression));
+		break;
 
-	case ExpressionType::NUMBER: return TypeKind::NUM;
-	case ExpressionType::REAL: return TypeKind::REAL;
-	case ExpressionType::BOOL: return TypeKind::BOOL;
-	case ExpressionType::STRING: return TypeKind::TEXT;
+	case ExpressionType::NUMBER:
+		resultType = TypeKind::NUM;
+		break;
+	case ExpressionType::REAL:
+		resultType = TypeKind::REAL;
+		break;
+	case ExpressionType::BOOL:
+		resultType = TypeKind::BOOL;
+		break;
+	case ExpressionType::STRING:
+		resultType = TypeKind::TEXT;
+		break;
 
 	case ExpressionType::IDENTIFIER:
-		return analyzeIdentifier(std::dynamic_pointer_cast<IdentifierExpr>(expression));
+		resultType = analyzeIdentifier(std::dynamic_pointer_cast<IdentifierExpr>(expression));
+		break;
 
 	case ExpressionType::FUNC_CALL:
-		return analyzeFunctionCall(std::dynamic_pointer_cast<FunctionCallExpr>(expression));
-
+		resultType = analyzeFunctionCall(std::dynamic_pointer_cast<FunctionCallExpr>(expression));
+		break;
 
 	case ExpressionType::ERROR:
 	default:
@@ -365,42 +399,38 @@ TypeKind Analyzer::analyzeBinaryExpression(std::shared_ptr<BinaryExpr> expressio
 	switch (expression->getType())
 	{
 	case BinaryExprType::ADD:
-		// Special case for text concatenation
-		if (leftType == TypeKind::TEXT || rightType == TypeKind::TEXT) {
-			if (leftType != rightType)
-			{
-				throw AnalyzerCannotPerformOnText(expression->getLineNumber());
-			}
-			return TypeKind::TEXT;
-		}
-
-		return convertBinaryOperation(leftType, rightType, expression->getLeft(), expression->getRight());
-
-
 	case BinaryExprType::SUB:
 	case BinaryExprType::MUL:
 	case BinaryExprType::DIV:
 		// These operations are only valid for numeric types
-		if (leftType == TypeKind::TEXT || rightType == TypeKind::TEXT) {
+
+		if (leftType == TypeKind::TEXT || rightType == TypeKind::TEXT)
+		{
 			throw AnalyzerCannotPerformOnText(expression->getLineNumber());
 		}
-
+		if (leftType == TypeKind::BOOL && rightType == TypeKind::BOOL)
+		{
+			expression->getLeft()->markForConversion(TypeKind::NUM);
+			expression->getRight()->markForConversion(TypeKind::NUM);
+			return TypeKind::NUM;
+		}
 		return convertBinaryOperation(leftType, rightType, expression->getLeft(), expression->getRight());
-
 
 	case BinaryExprType::EQUAL_EQUAL:
 	case BinaryExprType::NOT_EQUAL:
-		// Only accepts 2 texts
 		if (leftType == TypeKind::TEXT || rightType == TypeKind::TEXT)
 		{
-			if (leftType == rightType)
+			if (leftType != rightType)
 			{
-				return TypeKind::BOOL;
+				throw AnalyzerCannotPerformOnText(expression->getLineNumber());
 			}
-			throw AnalyzerCannotPerformOnText(expression->getLineNumber());
+			return TypeKind::BOOL;
 		}
 
+		convertBinaryOperation(leftType, rightType, expression->getLeft(), expression->getRight());
+
 		return TypeKind::BOOL;
+
 
 	case BinaryExprType::GREATER:
 	case BinaryExprType::GREATER_EQUAL:
@@ -410,6 +440,9 @@ TypeKind Analyzer::analyzeBinaryExpression(std::shared_ptr<BinaryExpr> expressio
 		{
 			throw AnalyzerCannotPerformOnText(expression->getLineNumber());
 		}
+
+		convertBinaryOperation(leftType, rightType, expression->getLeft(), expression->getRight());
+
 		return TypeKind::BOOL;
 
 	default:

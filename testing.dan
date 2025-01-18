@@ -1,0 +1,28 @@
+
+for (i = 0) until (asdfasdf)
+{
+
+}
+
+
+
+function int hello1(text hello, int YAY)
+{
+	
+	return YAY;
+}
+
+text yay = "
+num hello = 0
+real asdfasd = 0.0123;
+out hello
+
+if (hello == 0) then
+{
+	out hello + 1;
+}
+else
+{
+	out "you failed!";	
+}
+
